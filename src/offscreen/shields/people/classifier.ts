@@ -47,7 +47,7 @@ export function toScore(raw: Float32Array, mode: NonNullable<PeopleConfig['outpu
 
 /** Probability that the frame is synthetic, or null when no model is installed. */
 export async function classifyFrame(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): Promise<{ score: number; backend: Backend } | null> {
-  const model = await getModel(PEOPLE_MODEL);
+  const model = await getModel(PEOPLE_MODEL, ['wasm']); // INT8 graph: WebGPU gives near-random scores and ~3 s/frame (see ort.ts)
   if (!model) return null;
   const cfg = await loadPeopleConfig();
   const size = cfg.size ?? 224;

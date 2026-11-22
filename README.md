@@ -75,6 +75,6 @@ Video: Google Meet, Zoom (`*.zoom.us`), WhatsApp Web.
 
 - Site selectors for the prompt interceptors target the current DOM of each chat app. They are only tested against stand-in pages, and sites change their markup, so they may need updating.
 - Without a cloaking model, the Pixels fallback is bounded noise, **not** a learned adversarial cloak and gives no guarantee against any recognition system.
-- Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. Detectors are advisory and can be wrong either way.
+- Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. With the installed model (`npm run models`) it catches most AI-generated faces but **missed every face-swap in our 80-image test** (MODELS.md), and it is slow (about 0.6 s/frame), so a green pill does not mean the caller is real. Detectors are advisory and can be wrong either way.
 - Prompt redaction without an NER model catches structured data and name cues ("my name is …"), not arbitrary names. Run `npm run models` to install the real NER model (see MODELS.md); it is not committed because of its size.
 - JavaScript strings cannot be zeroed; "zero-fill" applies to the typed arrays and tensors that hold images, frames and tokens.

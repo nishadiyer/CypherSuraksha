@@ -68,6 +68,37 @@ Median 72 ms per prompt on WASM. Known limits: small fixture, so treat the recal
 
 **INT8 models run on WASM only.** The WebGPU provider has no proper kernels for INT8 (`MatMulInteger`, `DynamicQuantizeLinear`): in the same test it found almost no entities (47%, same as the fallback) and was about 4x slower (301 ms vs 72 ms). `getModel(file, ['wasm'])` pins it. Use FP16/FP32 graphs if you want WebGPU.
 
+## Installed model: People deepfake classifier
+
+`npm run models` also installs this. `npm run fixtures` builds the evaluation set; `node tests/e2e/run.mjs people` measures it.
+
+| | |
+|---|---|
+| Model | `buildborderless/CommunityForensics-DeepfakeDet-ViT`, `onnx/model_int8.onnx` (ViT-Small, 384 px, single logit, sigmoid = P(fake); trained on 2.7M images from 4,803 generators; paper: arXiv 2411.04125) |
+| Source | https://huggingface.co/buildborderless/CommunityForensics-DeepfakeDet-ViT at revision `ac6ee457bea904a373065754107451793b56db00` (the corrected `onnx/` files; the older `onnx_legacy/` and the `onnx-community/` copy have a wrong config and are not used) |
+| Licence | MIT |
+| SHA-256 | `968f113f1107d58bfc73444b6e87020e2d541780ad43b7a1ac3e3b18b86c2bbd` (22 MB) |
+| Config | `size` 384, CLIP mean/std, `output: "sigmoid"` |
+
+**Measured** on 80 labelled face images (40 real from IMDB-WIKI, 40 fake from `OpenRL/DeepFakeFace`: 14 InsightFace face-swap, 13 Stable Diffusion inpainting, 13 Stable Diffusion text-to-image; seeded sample, OpenRAIL dataset, images not committed, `tests/fixtures/deepfake/manifest.json` records names and hashes). Each image goes through the real extension path (224x224 frame, PEOPLE shield, real onnxruntime-web in Chrome):
+
+| | Result |
+|---|---|
+| Accuracy at 0.5 | 75.0% (60/80); AUC 0.783 |
+| Real photos called real | 40/40 |
+| Stable Diffusion text-to-image caught | 13/13 |
+| Stable Diffusion inpainting caught | 7/13 |
+| **Face-swap (InsightFace) caught** | **0/14** |
+| Median latency | 640 ms/frame on WASM |
+
+An independent Python/PIL + ONNX Runtime run on the FP32 model gives the same numbers (75% at 224 px, AUC 0.78), so the in-browser pipeline and INT8 quantization are not the cause of any of the above.
+
+**What this does and does not mean. Read before trusting the pill:**
+- It detects *AI-generated* faces much better than *face-swapped* ones. **It did not catch a single face-swap in the fixture, and face-swap is the most common live-call deepfake.** A green pill means "no generator artefacts seen", not "verified real".
+- The fixture is small (80), the real photos are Wikipedia portraits (non-square, some greyscale) and the fakes are 512x512 squares, so part of what it separates may be image style. Webcam video (compression, lighting, motion) is untested; false-positive and false-negative rates on real calls are unknown.
+- 640 ms per frame is far above the 150 ms budget, so the adaptive sampler settles at 0.5 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip.
+- INT8 on WASM only (see the NER note on WebGPU). Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
+
 ## Getting weights with Microsoft Olive / Foundry
 
 Olive exports and quantizes; the commands below are the general pattern. Check Olive's docs for current flags and recipes.

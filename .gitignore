@@ -2,3 +2,5 @@ node_modules
 dist
 public/models/*.onnx
 release
+tests/fixtures/deepfake/*
+!tests/fixtures/deepfake/manifest.json

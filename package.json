@@ -12,7 +12,8 @@
     "test:e2e": "npm run build && node tests/e2e/run.mjs",
     "audit:final": "node scripts/final-audit.mjs",
     "package": "npm run build && node scripts/package.mjs",
-    "models": "node scripts/fetch-models.mjs"
+    "models": "node scripts/fetch-models.mjs",
+    "fixtures": "python3 -I scripts/fetch-deepfake-fixture.py"
   },
   "dependencies": {
     "onnxruntime-web": "^1.31.1",
