@@ -61,7 +61,7 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## Models
 
-The extension works with no model files, using deterministic fallbacks. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
+The extension works with no model files, using deterministic fallbacks. `npm run models` installs the real Privacy NER model. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
 
 ## Supported sites
 
@@ -76,5 +76,5 @@ Video: Google Meet, Zoom (`*.zoom.us`), WhatsApp Web.
 - Site selectors for the prompt interceptors target the current DOM of each chat app. They are only tested against stand-in pages, and sites change their markup, so they may need updating.
 - Without a cloaking model, the Pixels fallback is bounded noise, **not** a learned adversarial cloak and gives no guarantee against any recognition system.
 - Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. Detectors are advisory and can be wrong either way.
-- Prompt redaction without an NER model catches structured data and name cues ("my name is …"), not arbitrary names.
+- Prompt redaction without an NER model catches structured data and name cues ("my name is …"), not arbitrary names. Run `npm run models` to install the real NER model (see MODELS.md); it is not committed because of its size.
 - JavaScript strings cannot be zeroed; "zero-fill" applies to the typed arrays and tensors that hold images, frames and tokens.

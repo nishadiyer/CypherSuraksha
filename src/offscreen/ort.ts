@@ -65,17 +65,22 @@ async function loadOrt(): Promise<Ort> {
 
 /**
  * Loads (once) an InferenceSession for a packaged .onnx. Prefers WebGPU and
- * falls back to WASM SIMD. Resolves null when the model is not installed,
- * which callers treat as "use the deterministic fallback".
+ * falls back to WASM SIMD, unless `only` restricts the providers. INT8 graphs
+ * (MatMulInteger / DynamicQuantizeLinear) must pass `['wasm']`: the WebGPU
+ * provider has no proper kernels for them and returned unusable output (and
+ * was ~4x slower) for the NER model in tests/e2e/gateNer.mjs.
+ * Resolves null when the model is not installed, which callers treat as
+ * "use the deterministic fallback".
  */
-export function getModel(file: string): Promise<LoadedModel | null> {
+export function getModel(file: string, only?: readonly Backend[]): Promise<LoadedModel | null> {
   let p = sessions.get(file);
   if (!p) {
     p = (async () => {
       const bytes = await readPackaged(file);
       if (!bytes) return null;
       const ort = await loadOrt();
-      const order: Backend[][] = webgpuAvailable() ? [['webgpu'], ['wasm']] : [['wasm']];
+      const wanted: Backend[] = only ? [...only] : webgpuAvailable() ? ['webgpu', 'wasm'] : ['wasm'];
+      const order: Backend[][] = wanted.filter((b) => b !== 'webgpu' || webgpuAvailable()).map((b) => [b]);
       let lastErr: unknown;
       try {
         for (const eps of order) {

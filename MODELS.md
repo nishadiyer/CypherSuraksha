@@ -46,6 +46,28 @@ A BERT-family **token-classification** model (e.g. a cased `bert-base-NER` expor
   `output`: `"sigmoid"` (one logit), `"prob"` (already 0..1) or `"softmax2"` (`[real, fake]` logits).
 - Score is the probability the frame is synthetic. A 5-frame rolling mean drives the pill: `<0.40` green, `0.40–0.70` yellow, `≥0.70` red (only once 5 frames are in). The circuit-breaker modal needs 3 consecutive red evaluations.
 
+## Installed model: Privacy NER
+
+`npm run models` (`node scripts/fetch-models.mjs`) downloads and checksum-verifies the real NER model into `public/models/`, then `npm run build` ships it. The `.onnx` is git-ignored (104 MB, over GitHub's 100 MB file limit); the vocab and config are committed.
+
+| | |
+|---|---|
+| Model | `Xenova/bert-base-NER`, `onnx/model_quantized.onnx` (INT8 export of `dslim/bert-base-NER`, BERT-base cased, CoNLL-2003 labels) |
+| Source | https://huggingface.co/Xenova/bert-base-NER at revision `8e892123e8b7c2c0c2bd1dcb598b7d244c4e53aa` |
+| Licence | MIT (both `Xenova/bert-base-NER` and `dslim/bert-base-NER`) |
+| SHA-256 | model `caaee70a5518ec7f9e46e5308fcc9263a8c227703a9ce46cf61c69a552349648`, vocab `eeaa9875b23b04b4c54ef759d03db9d1ba1554838f8fb26c5d96fa551df93d02` |
+
+**Measured** (`node tests/e2e/run.mjs ner`, real Chrome, onnxruntime-web, 20 prompt-style sentences written before the model was run, 53 PERSON/ORG/LOC entities; an entity counts when its text no longer appears in the redacted output):
+
+| | Recall | PERSON | LOC | ORG |
+|---|---|---|---|---|
+| Fallback only (regex + name cues) | 47% (25/53) | 19/21 | 2/18 | 4/14 |
+| Real model | 100% (53/53) | 21/21 | 18/18 | 14/14 |
+
+Median 72 ms per prompt on WASM. Known limits: small fixture, so treat the recall as indicative, not a benchmark. The model over-flags some acronyms (it redacted `UDP` as an ORG in an entity-free prompt, 1 of 4 negatives), and it was trained on English news text.
+
+**INT8 models run on WASM only.** The WebGPU provider has no proper kernels for INT8 (`MatMulInteger`, `DynamicQuantizeLinear`): in the same test it found almost no entities (47%, same as the fallback) and was about 4x slower (301 ms vs 72 ms). `getModel(file, ['wasm'])` pins it. Use FP16/FP32 graphs if you want WebGPU.
+
 ## Getting weights with Microsoft Olive / Foundry
 
 Olive exports and quantizes; the commands below are the general pattern. Check Olive's docs for current flags and recipes.

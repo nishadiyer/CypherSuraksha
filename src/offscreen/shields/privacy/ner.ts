@@ -96,7 +96,7 @@ export async function runNer(text: string): Promise<{ spans: Span[]; backend: Ba
   ready ??= init();
   const r = await ready;
   if (!r) return null;
-  const model = await getModel(NER_MODEL);
+  const model = await getModel(NER_MODEL, ['wasm']); // INT8 graph: WebGPU gives wrong output (see ort.ts)
   if (!model) return null;
   const { ort, session, backend } = model;
   const maxLen = (r.cfg.maxLength ?? 512) - 2;

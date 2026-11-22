@@ -1,0 +1,31 @@
+{
+  "description": "20 labelled prompt-style sentences written before the model was run (not tuned to it). An entity counts as recalled when its text no longer appears in the redacted output. Only PERSON, ORG and LOC are scored (the types the NER model is responsible for).",
+  "sentences": [
+    { "text": "My name is Priya Venkataraman and I live in Chennai.", "entities": [["Priya Venkataraman", "PERSON"], ["Chennai", "LOC"]] },
+    { "text": "Can you help me write an email to Dr. Rahul Mehta at Infosys about my project?", "entities": [["Rahul Mehta", "PERSON"], ["Infosys", "ORG"]] },
+    { "text": "Satya Nadella announced the new strategy at Microsoft headquarters in Redmond.", "entities": [["Satya Nadella", "PERSON"], ["Microsoft", "ORG"], ["Redmond", "LOC"]] },
+    { "text": "I'm flying from Mumbai to Berlin next week to meet Angela's team at Siemens.", "entities": [["Mumbai", "LOC"], ["Berlin", "LOC"], ["Angela", "PERSON"], ["Siemens", "ORG"]] },
+    { "text": "Summarize this complaint filed by Mohammed Al-Farsi against Barclays Bank.", "entities": [["Mohammed Al-Farsi", "PERSON"], ["Barclays Bank", "ORG"]] },
+    { "text": "Our CFO, Elena Petrova, moved the Paris office to Lyon.", "entities": [["Elena Petrova", "PERSON"], ["Paris", "LOC"], ["Lyon", "LOC"]] },
+    { "text": "Tell Sam Altman that OpenAI should visit Nairobi.", "entities": [["Sam Altman", "PERSON"], ["OpenAI", "ORG"], ["Nairobi", "LOC"]] },
+    { "text": "Aarav Sharma from Bengaluru scored the highest marks at IIT Bombay.", "entities": [["Aarav Sharma", "PERSON"], ["Bengaluru", "LOC"], ["IIT Bombay", "ORG"]] },
+    { "text": "Draft a recommendation letter for my student Chloe Dubois, who is applying to Stanford University.", "entities": [["Chloe Dubois", "PERSON"], ["Stanford University", "ORG"]] },
+    { "text": "My doctor, Dr. Lakshmi Narayanan, at Apollo Hospitals said the results were fine.", "entities": [["Lakshmi Narayanan", "PERSON"], ["Apollo Hospitals", "ORG"]] },
+    { "text": "John Smith works for Goldman Sachs in New York.", "entities": [["John Smith", "PERSON"], ["Goldman Sachs", "ORG"], ["New York", "LOC"]] },
+    { "text": "Please translate this message from my grandmother Fatima Khan in Karachi.", "entities": [["Fatima Khan", "PERSON"], ["Karachi", "LOC"]] },
+    { "text": "Yuki Tanaka and Hiroshi Sato are co-founders of Sony's startup arm in Osaka.", "entities": [["Yuki Tanaka", "PERSON"], ["Hiroshi Sato", "PERSON"], ["Sony", "ORG"], ["Osaka", "LOC"]] },
+    { "text": "I received a job offer from Deloitte in Hyderabad; recruiter Neha Gupta called yesterday.", "entities": [["Deloitte", "ORG"], ["Hyderabad", "LOC"], ["Neha Gupta", "PERSON"]] },
+    { "text": "Write a birthday poem for my son Arjun, who goes to school in Pune.", "entities": [["Arjun", "PERSON"], ["Pune", "LOC"]] },
+    { "text": "The meeting with Carlos Rodriguez from Telefonica is in Madrid on Friday.", "entities": [["Carlos Rodriguez", "PERSON"], ["Telefonica", "ORG"], ["Madrid", "LOC"]] },
+    { "text": "Isabella Rossi emailed the University of Oxford about her thesis.", "entities": [["Isabella Rossi", "PERSON"], ["University of Oxford", "ORG"]] },
+    { "text": "Ravi Kumar lost his wallet near Connaught Place in Delhi.", "entities": [["Ravi Kumar", "PERSON"], ["Connaught Place", "LOC"], ["Delhi", "LOC"]] },
+    { "text": "Help me reply to Olivia Brown, my manager at Amazon, about the Seattle relocation.", "entities": [["Olivia Brown", "PERSON"], ["Amazon", "ORG"], ["Seattle", "LOC"]] },
+    { "text": "My neighbour Mr. Thomas Fernandes of Goa runs a bakery.", "entities": [["Thomas Fernandes", "PERSON"], ["Goa", "LOC"]] }
+  ],
+  "negatives": [
+    "How do I reverse a linked list in Python?",
+    "Explain photosynthesis to a ten year old.",
+    "Write a haiku about the monsoon.",
+    "What is the difference between TCP and UDP?"
+  ]
+}
