@@ -1,0 +1,139 @@
+{
+  "manifest_version": 3,
+  "name": "AI Shield \u2014 Privacy, Pixels, People",
+  "version": "1.0.0",
+  "description": "Local-only protection from AI-driven threats: redacts personal data from AI prompts, cloaks photos, and flags deepfake video calls. Nothing leaves your browser.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "offscreen",
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'none';"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*"
+      ],
+      "js": [
+        "src/content/prompt.ts"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.instagram.com/*",
+        "https://*.facebook.com/*",
+        "https://*.x.com/*",
+        "https://*.twitter.com/*",
+        "https://*.tiktok.com/*",
+        "https://*.linkedin.com/*",
+        "https://*.reddit.com/*",
+        "https://*.snapchat.com/*",
+        "https://*.pinterest.com/*",
+        "https://*.discord.com/*",
+        "https://web.whatsapp.com/*",
+        "https://web.telegram.org/*",
+        "https://*.imgur.com/*",
+        "https://*.flickr.com/*",
+        "https://*.threads.net/*",
+        "https://*.bsky.app/*",
+        "https://instagram.com/*",
+        "https://facebook.com/*",
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://tiktok.com/*",
+        "https://linkedin.com/*",
+        "https://reddit.com/*",
+        "https://snapchat.com/*",
+        "https://pinterest.com/*",
+        "https://discord.com/*",
+        "https://imgur.com/*",
+        "https://flickr.com/*",
+        "https://threads.net/*",
+        "https://bsky.app/*"
+      ],
+      "js": [
+        "src/content/upload.ts"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "src/content/video.ts"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "AI Shield",
+    "default_icon": {
+      "16": "src/assets/icons/icon16.png",
+      "32": "src/assets/icons/icon32.png",
+      "48": "src/assets/icons/icon48.png",
+      "128": "src/assets/icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "src/assets/icons/icon16.png",
+    "32": "src/assets/icons/icon32.png",
+    "48": "src/assets/icons/icon48.png",
+    "128": "src/assets/icons/icon128.png"
+  },
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://*.instagram.com/*",
+    "https://*.facebook.com/*",
+    "https://*.x.com/*",
+    "https://*.twitter.com/*",
+    "https://*.tiktok.com/*",
+    "https://*.linkedin.com/*",
+    "https://*.reddit.com/*",
+    "https://*.snapchat.com/*",
+    "https://*.pinterest.com/*",
+    "https://*.discord.com/*",
+    "https://web.whatsapp.com/*",
+    "https://web.telegram.org/*",
+    "https://*.imgur.com/*",
+    "https://*.flickr.com/*",
+    "https://*.threads.net/*",
+    "https://*.bsky.app/*",
+    "https://instagram.com/*",
+    "https://facebook.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://tiktok.com/*",
+    "https://linkedin.com/*",
+    "https://reddit.com/*",
+    "https://snapchat.com/*",
+    "https://pinterest.com/*",
+    "https://discord.com/*",
+    "https://imgur.com/*",
+    "https://flickr.com/*",
+    "https://threads.net/*",
+    "https://bsky.app/*",
+    "https://meet.google.com/*",
+    "https://*.zoom.us/*"
+  ]
+}
