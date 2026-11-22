@@ -1,0 +1,34 @@
+name: phasedoc
+
+# Keeps PHASEDOC.md and phasedoc/BUILDPLAN.md in sync with phasedoc/plan.db.
+# The database is the source of truth; the Markdown is generated from it.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phasedoc
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate Markdown from the task database
+        run: python3 phasedoc/plan.py mirror
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- PHASEDOC.md phasedoc/BUILDPLAN.md; then
+            echo "phasedoc already up to date"
+          else
+            git config user.name "phasedoc-bot"
+            git config user.email "phasedoc-bot@users.noreply.github.com"
+            git add PHASEDOC.md phasedoc/BUILDPLAN.md
+            git commit -m "phasedoc: regenerate PHASEDOC.md from plan.db [skip ci]"
+            git push
+          fi

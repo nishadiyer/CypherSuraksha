@@ -29,3 +29,10 @@ The toolbar popup lets the user turn each shield on or off, list trusted sites, 
 
 ## P5 — Live-site validation and release
 Everything so far was tested against stand-in pages that imitate real chat, upload and call sites. This phase is about proving it on the real sites, whose page structure changes over time, and preparing the extension for the Chrome Web Store. These leaves stay open until someone actually runs them on the real sites.
+
+## Working on this repo with others
+- `phasedoc/plan.db` is the source of truth. `PHASEDOC.md` and `phasedoc/BUILDPLAN.md` are generated from it.
+- To record progress, run the leaf's acceptance test, then `python3 phasedoc/plan.py tick <id> --ran --note "..."` and commit the changed `plan.db` with the regenerated Markdown.
+- Never edit `PHASEDOC.md` or `BUILDPLAN.md` by hand. The GitHub Action in `.github/workflows/phasedoc.yml` regenerates them on every push to `main` and commits any difference, so they cannot drift from the database.
+- `plan.db` is a binary file: if two people tick leaves on different branches, Git cannot merge it. Take either side, then re-run the `tick` commands for the other person's leaves.
+- Code changes alone do not move the percentage. Only a recorded, test-backed tick does.
