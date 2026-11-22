@@ -14,6 +14,23 @@ from pathlib import Path
 OUT = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "deepfake"
 PLAN = [("wiki", "real", 40), ("insight", "fake", 14), ("inpainting", "fake", 13), ("text2img", "fake", 13)]
 SEED = 20261122
+# Optional: build a second, disjoint evaluation set, e.g.
+#   python3 -I scripts/fetch-deepfake-fixture.py --seed 7 --out tests/fixtures/deepfake-test --counts wiki=100,insight=34,inpainting=33,text2img=33 --exclude tests/fixtures/deepfake/manifest.json
+if len(sys.argv) > 1:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--seed", type=int, default=SEED)
+    ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--counts", default="")
+    ap.add_argument("--exclude", default="")
+    a = ap.parse_args()
+    SEED, OUT = a.seed, Path(a.out).resolve()
+    if a.counts:
+        c = dict(kv.split("=") for kv in a.counts.split(","))
+        PLAN = [(n, "real" if n == "wiki" else "fake", int(c[n])) for n in c]
+    EXCLUDE = {i["source"] for i in json.loads(Path(a.exclude).read_text())["items"]} if a.exclude else set()
+else:
+    EXCLUDE = set()
 
 
 class RangeFile(io.RawIOBase):
@@ -45,7 +62,7 @@ def main():
     items = []
     for name, label, n in PLAN:
         z = zipfile.ZipFile(RangeFile(f"https://huggingface.co/datasets/OpenRL/DeepFakeFace/resolve/{FULL_REV}/{name}.zip"))
-        names = sorted(i.filename for i in z.infolist() if i.filename.lower().endswith((".jpg", ".jpeg", ".png")))
+        names = sorted(i.filename for i in z.infolist() if i.filename.lower().endswith((".jpg", ".jpeg", ".png")) and f"{name}.zip:{i.filename}" not in EXCLUDE)
         picks = random.Random(f"{SEED}-{name}").sample(names, n)
         for k, fn in enumerate(sorted(picks)):
             data = z.read(fn)

@@ -5,3 +5,5 @@ release
 tests/fixtures/deepfake/*
 !tests/fixtures/deepfake/manifest.json
 .venv-cloak
+tests/fixtures/deepfake-test/*
+!tests/fixtures/deepfake-test/manifest.json
