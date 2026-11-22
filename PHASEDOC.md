@@ -148,7 +148,7 @@ During a video call the extension samples frames, asks a model how likely they a
   - _note:_ 2026-11-22 e2e gate4 0.5-2 FPS on captureStream
 - [~] `P3.1.2` Adaptive throttle above 150 ms or without WebGPU
   - _acceptance:_ vitest tests/people.test.ts (6 sampler tests) + e2e gate4 heavy-load back-off
-  - _note:_ 2026-11-22 unit tests (6 sampler tests) pass; e2e heavy-load back-off passed 3/3 earlier but FAILED in the latest full run (10 frames/10s vs baseline) - flaky, CPU throttle may not reach the worker thread. Not ticked.
+  - _note:_ 2026-11-22 re-verified: unit tests (6 sampler tests) pass; e2e gate4 heavy-load back-off FAILS deterministically (3/3 full runs: 20 frames/10s vs 9-10 frames/5s baseline, i.e. no back-off). Not flaky as earlier noted. Throttle logic is unit-tested but the e2e load simulation does not engage it (CPU throttle may not reach the worker thread, or sampler ignores latency under this load). Not ticked.
 **P3.2 Classifier and warnings**
 
 - [x] `P3.2.1` ONNX frame classifier with 5-frame rolling smoothing

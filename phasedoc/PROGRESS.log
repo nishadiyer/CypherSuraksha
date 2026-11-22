@@ -37,3 +37,4 @@
 2026-11-22 11:07:24  NOTE    P2.2.4 No suitable public ONNX adversarial-cloak model identified; fallback is bounded noise only.
 2026-11-22 11:07:24  NOTE    P3.2.4 No real deepfake model installed; People shield reports 'Unverified'.
 2026-11-22 11:07:24  NOTE    P5.1.1 Not run: selectors only tested against stand-in pages.
+2026-11-22 15:15:41  PARTIAL P3.1.2 Adaptive throttle above 150 ms or without WebGPU -- 2026-11-22 re-verified: unit tests (6 sampler tests) pass; e2e gate4 heavy-load back-off FAILS deterministically (3/3 full runs: 20 frames/10s vs 9-10 frames/5s baseline, i.e. no back-off). Not flaky as earlier noted. Throttle logic is unit-tested but the e2e load simulation does not engage it (CPU throttle may not reach the worker thread, or sampler ignores latency under this load). Not ticked.
