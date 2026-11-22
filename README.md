@@ -48,11 +48,16 @@ npm install
 npm run build          # tsc --noEmit, vite build, manifest/CSP gate
 npm run audit:final    # static audit (console leaks, dispose wiring, network & storage invariants)
 npm test               # unit tests
+npm run package        # build + zip to release/ai-shield-<version>.zip for the Chrome Web Store
 ```
 
 Open `chrome://extensions`, enable Developer mode, **Load unpacked**, choose `dist/`.
 
 `npm run test:e2e` additionally drives a real Chrome against fake pages (needs Google Chrome; set `CHROME_PATH` if it is not in the macOS default location). It is a developer check and is not part of `npm run build`.
+
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md).
 
 ## Models
 
