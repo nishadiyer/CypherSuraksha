@@ -60,23 +60,27 @@ export interface VideoDeps {
   onVideoGone(video: HTMLVideoElement): void;
 }
 
-const SAMPLE_SIZE = 224;
+/** Longest side of the frame sent for analysis. The whole frame goes (aspect kept) so the offscreen worker can find and crop the face. */
+const FRAME_MAX_SIDE = 640;
 const MIN_W = 160;
 const MIN_H = 120;
 const MAX_TRACKED = 4;
 
-/** Grab one frame onto an OffscreenCanvas; returns base64 RGBA, then zeroes and frees buffers. */
-export function grabFrame(video: HTMLVideoElement, size = SAMPLE_SIZE): { b64: string; width: number; height: number } | null {
-  if (video.readyState < 2 || video.videoWidth === 0) return null;
-  const canvas = new OffscreenCanvas(size, size);
+/** Grab one frame (aspect preserved, longest side <= FRAME_MAX_SIDE) onto an OffscreenCanvas; returns base64 RGBA, then zeroes and frees buffers. */
+export function grabFrame(video: HTMLVideoElement, maxSide = FRAME_MAX_SIDE): { b64: string; width: number; height: number } | null {
+  if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return null;
+  const scale = Math.min(1, maxSide / Math.max(video.videoWidth, video.videoHeight));
+  const width = Math.max(1, Math.round(video.videoWidth * scale));
+  const height = Math.max(1, Math.round(video.videoHeight * scale));
+  const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
   try {
-    ctx.drawImage(video, 0, 0, size, size);
-    const img = ctx.getImageData(0, 0, size, size); // throws SecurityError for tainted (cross-origin) video
+    ctx.drawImage(video, 0, 0, width, height);
+    const img = ctx.getImageData(0, 0, width, height); // throws SecurityError for tainted (cross-origin) video
     const b64 = bytesToB64(new Uint8Array(img.data.buffer));
     img.data.fill(0);
-    return { b64, width: size, height: size };
+    return { b64, width, height };
   } finally {
     canvas.width = canvas.height = 0;
   }
@@ -115,7 +119,7 @@ export function installVideoSampler(win: Window, deps: VideoDeps): () => void {
             const latency = performance.now() - t0;
             if (!r) delay = 5000; // shield off or site allowlisted: poll lazily
             if (r) {
-              sampler.setBackend(r.backend);
+              if (r.status !== 'no-face') sampler.setBackend(r.backend); // a no-face reply says nothing about the backend
               sampler.record(latency);
               if (!announced) {
                 announced = true;

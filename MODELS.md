@@ -80,7 +80,7 @@ Median 72 ms per prompt on WASM. Known limits: small fixture, so treat the recal
 | SHA-256 | `968f113f1107d58bfc73444b6e87020e2d541780ad43b7a1ac3e3b18b86c2bbd` (22 MB) |
 | Config | `size` 384, CLIP mean/std, `output: "sigmoid"` |
 
-**Measured** on 80 labelled face images (40 real from IMDB-WIKI, 40 fake from `OpenRL/DeepFakeFace`: 14 InsightFace face-swap, 13 Stable Diffusion inpainting, 13 Stable Diffusion text-to-image; seeded sample, OpenRAIL dataset, images not committed, `tests/fixtures/deepfake/manifest.json` records names and hashes). Each image goes through the real extension path (224x224 frame, PEOPLE shield, real onnxruntime-web in Chrome):
+**Measured, original pipeline (whole frame squashed to 224x224, no crop)** on 80 labelled face images (40 real from IMDB-WIKI, 40 fake from `OpenRL/DeepFakeFace`: 14 InsightFace face-swap, 13 Stable Diffusion inpainting, 13 Stable Diffusion text-to-image; seeded sample, OpenRAIL dataset, images not committed, `tests/fixtures/deepfake/manifest.json` records names and hashes). Each image goes through the real extension path (224x224 frame, PEOPLE shield, real onnxruntime-web in Chrome):
 
 | | Result |
 |---|---|
@@ -95,14 +95,37 @@ An independent Python/PIL + ONNX Runtime run on the FP32 model gives the same nu
 
 **Follow-up checks** (the 80-image dev set above plus a disjoint 200-image test set from the same dataset: 100 real, 34 face-swap, 33 inpainting, 33 text-to-image):
 - **Re-tuning the threshold does not help face-swaps.** Their median score is 0.000, the same as real photos (AUC 0.42 dev / 0.62 test). Lowering the threshold to 0.01 catches only 21% of swaps on test while 10% of real photos are flagged.
-- **The current pipeline is at chance on a realistic video-call frame.** Pasting each face small into a 16:9 tile (face about 45% of the tile height) drops AUC to 0.52 dev / 0.56 test, because the whole tile is squashed into the model. **Cropping to the detected face first** (the UltraFace detector already in the repo) restores it to 0.74 / 0.77 and lifts face-swap AUC from 0.62 to 0.80 on test (0.42 to 0.68 dev). It costs a little on generated faces (text-to-image AUC 0.995 to 0.934 on test). So the sampler must send the whole frame and the offscreen document must crop; today it squashes the frame first. Not implemented yet.
+- **The current pipeline is at chance on a realistic video-call frame.** Pasting each face small into a 16:9 tile (face about 45% of the tile height) drops AUC to 0.52 dev / 0.56 test, because the whole tile is squashed into the model. **Cropping to the detected face first** (the UltraFace detector already in the repo) restores it to 0.74 / 0.77 and lifts face-swap AUC from 0.62 to 0.80 on test (0.42 to 0.68 dev). It costs a little on generated faces (text-to-image AUC 0.995 to 0.934 on test). So the sampler now sends the whole frame and the offscreen worker detects and crops the face (implemented, measured below).
 - Even cropped, face-swap recall at a threshold that keeps false alarms under 1% is only about 6-21%. A detector trained on face-swaps would be needed for a real fix. The tile is a flat grey background, a simplification of real calls.
+
+**Current pipeline (implemented):**
+1. The content script sends the **whole frame** (aspect kept, longest side up to 640 px), not a 224x224 squash.
+2. The offscreen worker runs the UltraFace detector (`face-detector.ultraface.onnx`), takes the largest face (at least 32 px) and crops a square with 30% margin (black where it leaves the frame).
+3. **No face found: the frame is not scored.** The pill shows a neutral grey "No face" and the 5-frame window is left untouched, because the model is at chance on frames without a clear face.
+4. Backend: if a **real GPU** is present (software renderers such as SwiftShader are rejected) the FP32 model (`people-deepfake.fp32.onnx`, 87 MB) runs on WebGPU, and is kept only if a timed warm inference is under 250 ms; otherwise the INT8 model runs on WASM. The reported backend (`webgpu` / `wasm`) drives the sampler's 2 FPS / 1 FPS cap. If the detector file is missing the old whole-frame path is used.
+5. The pill now reads "No fake found" / "Unsure" / "Fake?" (it used to say "Real", which overclaimed).
+
+**Measured, current pipeline** on the same 80-image dev set (`node tests/e2e/run.mjs people`, real Chrome; `E2E_REAL_GPU=1` for the real GPU):
+
+| | Software GPU (INT8, WASM) | Real Apple GPU (FP32, WebGPU) |
+|---|---|---|
+| AUC, whole frames | 0.836 | 0.825 |
+| **AUC, small face in a 16:9 call tile** (was 0.52, chance) | **0.738** | **0.732** |
+| Accuracy at 0.5 (whole frames) | 71.1% | 68.4% |
+| Real called real | 38/38 | 38/38 |
+| Face-swap caught | 1/13 | 1/13 |
+| Inpainting caught | 5/13 | 5/13 |
+| Text-to-image caught | 10/12 | 8/12 |
+| Face found in the frame | 95% plain, 81% tile | same |
+| **Median time per frame** | 864 ms | **82 ms** |
+
+Accuracy at a fixed 0.5 threshold went **down** (75% to about 70%) while AUC went up: cropping makes the scores rank better but lowers generated-face scores, so 0.5 is no longer the best cut-off. Face-swap detection is still essentially absent (1/13); cropping improved its *ranking* (AUC 0.62 to 0.80 on the larger test set) but not its recall at a usable threshold. The detector misses the face in about 19% of small-face tile frames (those frames are skipped, not guessed). Real webcam video is still untested.
 
 **What this does and does not mean. Read before trusting the pill:**
 - It detects *AI-generated* faces much better than *face-swapped* ones. **It did not catch a single face-swap in the fixture, and face-swap is the most common live-call deepfake.** A green pill means "no generator artefacts seen", not "verified real".
 - The fixture is small (80), the real photos are Wikipedia portraits (non-square, some greyscale) and the fakes are 512x512 squares, so part of what it separates may be image style. Webcam video (compression, lighting, motion) is untested; false-positive and false-negative rates on real calls are unknown.
-- 640 ms per frame (WASM INT8) is far above the 150 ms budget, so the adaptive sampler settles at 0.5 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip.
-- INT8 on WASM only (see the NER note on WebGPU). **The same model in FP32 (87 MB) runs 12x faster on a real GPU**: 53 ms per frame on Apple Metal WebGPU against 627 ms on WASM, output identical (max difference 8e-6). That is not wired in yet; it would bring the model under the 150 ms budget. Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
+- On a machine without a real GPU the INT8 WASM path takes about 0.85 s per frame (detection + crop + classify), so the adaptive sampler settles at 0.5-1 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip. With a real GPU it is about 80 ms.
+- INT8 on WASM only (see the NER note on WebGPU). **The same model in FP32 (87 MB) runs 12x faster on a real GPU**: 53 ms per frame on Apple Metal WebGPU against 627 ms on WASM, output identical (max difference 8e-6). This is now wired in (see below). Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
 
 ## Installed: Pixel cloak (per-image adversarial face cloak)
 

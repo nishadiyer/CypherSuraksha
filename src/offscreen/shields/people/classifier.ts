@@ -1,8 +1,12 @@
 import { zero } from '../../../shared/base64';
-import { assetInstalled, getModel, loadAssetText, type Backend } from '../../ort';
+import { assetInstalled, getModel, loadAssetText, webgpuAvailable, type Backend, type LoadedModel } from '../../ort';
+import { looksLikeRealGpu } from './crop';
 
 export const PEOPLE_MODEL = 'people-deepfake.int8.onnx';
 export const PEOPLE_CONFIG = 'people-deepfake.config.json';
+/** Same network in FP32: 12x faster than INT8 on a real GPU (53 vs 627 ms), identical output. See MODELS.md. */
+export const PEOPLE_MODEL_FP32 = 'people-deepfake.fp32.onnx';
+const FP32_BUDGET_MS = 250; // self-test: slower than this and we fall back to INT8 on WASM
 
 export interface PeopleConfig {
   size?: number; // square input side, default 224
@@ -16,7 +20,56 @@ let cfgPromise: Promise<PeopleConfig> | null = null;
 export const loadPeopleConfig = (): Promise<PeopleConfig> =>
   (cfgPromise ??= loadAssetText(PEOPLE_CONFIG).then((t) => (t ? (JSON.parse(t) as PeopleConfig) : {})));
 
-export const peopleModelInstalled = (): Promise<boolean> => assetInstalled(PEOPLE_MODEL);
+export const peopleModelInstalled = async (): Promise<boolean> => (await assetInstalled(PEOPLE_MODEL)) || (await assetInstalled(PEOPLE_MODEL_FP32));
+
+let picked: Promise<LoadedModel | null> | null = null;
+
+/**
+ * FP32 on WebGPU when the machine has a real GPU, verified by timing a warm inference; otherwise
+ * INT8 on WASM (INT8 is no faster on WebGPU and its output drifts slightly, see ort.ts).
+ */
+function pickModel(size: number): Promise<LoadedModel | null> {
+  return (picked ??= (async () => {
+    try {
+      if (webgpuAvailable() && (await assetInstalled(PEOPLE_MODEL_FP32))) {
+        const adapter = await (navigator as unknown as { gpu: { requestAdapter(): Promise<{ info?: Record<string, string> } | null> } }).gpu.requestAdapter();
+        if (adapter && looksLikeRealGpu(adapter.info)) {
+          const m = await getModel(PEOPLE_MODEL_FP32, ['webgpu']);
+          if (m && (await fastEnough(m, size))) return m;
+        }
+      }
+    } catch {
+      // fall through to INT8
+    }
+    return getModel(PEOPLE_MODEL, ['wasm']);
+  })());
+}
+
+async function fastEnough(m: LoadedModel, size: number): Promise<boolean> {
+  const { ort, session } = m;
+  const input = new Float32Array(3 * size * size);
+  const run = async (): Promise<number> => {
+    const t = new ort.Tensor('float32', input, [1, 3, size, size]);
+    const t0 = performance.now();
+    let out: Awaited<ReturnType<typeof session.run>> | undefined;
+    try {
+      out = await session.run({ [session.inputNames[0]!]: t });
+      void out[session.outputNames[0]!]!.data;
+      return performance.now() - t0;
+    } finally {
+      t.dispose();
+      if (out) Object.values(out).forEach((o) => o.dispose());
+    }
+  };
+  try {
+    await run(); // warm-up (shader compilation)
+    return (await run()) <= FP32_BUDGET_MS;
+  } catch {
+    return false;
+  } finally {
+    zero(input);
+  }
+}
 
 /** Resize RGBA to size x size via the GPU/Skia path; returns pixel data owned by the caller. */
 async function resize(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number, size: number): Promise<Uint8ClampedArray> {
@@ -47,9 +100,9 @@ export function toScore(raw: Float32Array, mode: NonNullable<PeopleConfig['outpu
 
 /** Probability that the frame is synthetic, or null when no model is installed. */
 export async function classifyFrame(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): Promise<{ score: number; backend: Backend } | null> {
-  const model = await getModel(PEOPLE_MODEL, ['wasm']); // INT8 graph: no faster on WebGPU, slightly different output (see ort.ts, MODELS.md)
-  if (!model) return null;
   const cfg = await loadPeopleConfig();
+  const model = await pickModel(cfg.size ?? 224);
+  if (!model) return null;
   const size = cfg.size ?? 224;
   const mean = cfg.mean ?? [0.485, 0.456, 0.406];
   const std = cfg.std ?? [0.229, 0.224, 0.225];

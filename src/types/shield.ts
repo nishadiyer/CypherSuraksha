@@ -78,4 +78,6 @@ export interface PeopleResult {
   level: 'GREEN' | 'YELLOW' | 'RED';
   sustainedRed: boolean;
   backend: string;
+  /** 'no-face': the frame had no usable face, so it was not scored (score fields are neutral). */
+  status?: 'no-face';
 }

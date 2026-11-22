@@ -19,7 +19,8 @@ export async function launch(opts = {}) {
   const userDataDir = mkdtempSync(join(tmpdir(), 'ai-shield-e2e-'));
   const browser = await puppeteer.launch({
     executablePath: CHROME, headless: true, pipe: true, userDataDir, protocolTimeout: opts.protocolTimeout ?? 30000, enableExtensions: [DIST],
-    args: ['--enable-unsafe-webgpu', '--use-angle=swiftshader'],
+    // Default: a software GPU so runs are the same on every machine. E2E_REAL_GPU=1 uses the real one (e.g. Apple Metal).
+    args: process.env.E2E_REAL_GPU ? ['--enable-unsafe-webgpu'] : ['--enable-unsafe-webgpu', '--use-angle=swiftshader'],
   });
   const swTarget = await browser.waitForTarget((t) => t.type() === 'service_worker' && t.url().includes('service-worker-loader'));
   const sw = await swTarget.worker();

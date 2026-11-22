@@ -26,7 +26,7 @@ export default async function gate4() {
     const { page } = await fakeSite(browser, 'meet.google.com', MEET);
     const pillIs = async (word) => (await readClosedShadowText(page)).includes(word);
 
-    check('GREEN pill appears for a normal (dark) stream', !!(await waitFor(() => pillIs('Real'), 15000)), await readClosedShadowText(page));
+    check('GREEN pill appears for a normal (dark) stream', !!(await waitFor(() => pillIs('No fake found'), 15000)), await readClosedShadowText(page));
     check('no circuit-breaker modal while green', !(await readClosedShadowText(page)).includes('AI-generated'));
 
     await sleep(8000); // let the sampler leave model-load warm-up before measuring a steady baseline
@@ -64,7 +64,7 @@ export default async function gate4() {
 
     // Back to normal -> pill recovers (no sticky red).
     await page.evaluate(() => { window.__bright = false; });
-    check('pill recovers to GREEN when the stream normalises', !!(await waitFor(() => pillIs('Real'), 30000, 500)));
+    check('pill recovers to GREEN when the stream normalises', !!(await waitFor(() => pillIs('No fake found'), 30000, 500)));
 
     // Persistence audit: no frames anywhere.
     const stores = await sw.evaluate(async () => ({ local: JSON.stringify(await chrome.storage.local.get(null)), session: JSON.stringify(await chrome.storage.session.get(null)) }));

@@ -1,7 +1,9 @@
 import { b64ToBytes, zero } from '../../shared/base64';
 import type { PeoplePayload, PeopleResult, Shield, ShieldRequest, ShieldResponse } from '../../types/shield';
 import { disposeModels } from '../ort';
+import { detectFaces, detectorInstalled } from './pixel/faceDetect';
 import { classifyFrame } from './people/classifier';
+import { cropBox, largestFace } from './people/crop';
 import { TemporalSmoother } from './people/smoother';
 
 const sessions = new Map<string, TemporalSmoother>();
@@ -12,6 +14,26 @@ function sweep(): void {
   for (const [id, s] of sessions) if (now - s.lastSeen > IDLE_MS) sessions.delete(id);
 }
 
+/** Detects the largest face and returns a square RGBA crop around it (black where it leaves the frame), or null. */
+async function cropToFace(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): Promise<{ rgba: Uint8ClampedArray<ArrayBuffer>; side: number } | null> {
+  const bitmap = await createImageBitmap(new ImageData(rgba, w, h));
+  let canvas: OffscreenCanvas | undefined;
+  try {
+    const face = largestFace((await detectFaces(bitmap)) ?? []);
+    if (!face) return null;
+    const box = cropBox(face);
+    canvas = new OffscreenCanvas(box.side, box.side);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, box.side, box.side);
+    ctx.drawImage(bitmap, -box.x, -box.y);
+    return { rgba: ctx.getImageData(0, 0, box.side, box.side).data, side: box.side };
+  } finally {
+    bitmap.close();
+    if (canvas) canvas.width = canvas.height = 0;
+  }
+}
+
 export const peopleShield: Shield = {
   kind: 'PEOPLE',
   async handle(req: ShieldRequest): Promise<ShieldResponse> {
@@ -19,12 +41,32 @@ export const peopleShield: Shield = {
     const p = req.payload as PeoplePayload;
     const key = `${req.tabId}:${p.sessionId}`;
     sweep();
-    const rgba = new Uint8ClampedArray(b64ToBytes(p.b64).buffer);
+    let rgba: Uint8ClampedArray<ArrayBuffer> | undefined = new Uint8ClampedArray(b64ToBytes(p.b64).buffer);
     let frame: { score: number; backend: string } | null = null;
+    let noFace = false;
     try {
-      frame = await classifyFrame(rgba, p.width, p.height);
+      if (await detectorInstalled()) {
+        // Whole frame in, face crop out: the model is at chance on a full video tile (MODELS.md).
+        const crop = await cropToFace(rgba, p.width, p.height);
+        if (crop) {
+          zero(rgba);
+          rgba = undefined;
+          try {
+            frame = await classifyFrame(crop.rgba, crop.side, crop.side);
+          } finally {
+            zero(crop.rgba);
+          }
+        } else noFace = true;
+      } else {
+        frame = await classifyFrame(rgba, p.width, p.height); // no detector installed: legacy whole-frame path
+      }
     } finally {
-      zero(rgba); // video frame never outlives this call
+      if (rgba) zero(rgba); // video frame never outlives this call
+    }
+
+    if (noFace) {
+      const result: PeopleResult = { frameScore: 0.5, smoothed: 0.5, level: 'YELLOW', sustainedRed: false, backend: 'no-face', status: 'no-face' };
+      return { requestId: req.requestId, action: 'ALLOW', data: result, confidence: 0, latencyMs: performance.now() - t0 };
     }
 
     let smoother = sessions.get(key);

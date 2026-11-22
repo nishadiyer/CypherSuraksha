@@ -15,6 +15,7 @@ const OUT = new URL('../public/models/', import.meta.url).pathname;
 const FILES = [
   { base: NER_BASE, src: 'onnx/model_quantized.onnx', dst: 'privacy-ner.int8.onnx', sha256: 'caaee70a5518ec7f9e46e5308fcc9263a8c227703a9ce46cf61c69a552349648' },
   { base: NER_BASE, src: 'vocab.txt', dst: 'privacy-ner.vocab.txt', sha256: 'eeaa9875b23b04b4c54ef759d03db9d1ba1554838f8fb26c5d96fa551df93d02' },
+  { base: DF_BASE, src: 'onnx/model.onnx', dst: 'people-deepfake.fp32.onnx', sha256: 'a42c7d740fbb345ba9a26d469b22f301d73089ce3c6da993877ed2b6965a8ba1' },
   { base: DF_BASE, src: 'onnx/model_int8.onnx', dst: 'people-deepfake.int8.onnx', sha256: '968f113f1107d58bfc73444b6e87020e2d541780ad43b7a1ac3e3b18b86c2bbd' },
   { base: FD_BASE, src: 'models/onnx/version-RFB-320.onnx', dst: 'face-detector.ultraface.onnx', sha256: '34cd7e60aeff28744c657de7a3dc64e872d506741de66987f3426f2b79f88017' },
 ];

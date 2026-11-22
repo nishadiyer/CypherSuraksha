@@ -2,10 +2,12 @@ import type { PeopleResult } from '../../types/shield';
 import { createShadowUI, type ShadowUI } from './shadowHost';
 
 const COLORS = { GREEN: 'bg-emerald-600', YELLOW: 'bg-amber-500', RED: 'bg-red-600' } as const;
+const NEUTRAL = 'bg-slate-400';
 
 function label(r: PeopleResult): string {
   if (r.backend === 'unavailable') return 'Unverified — detector not installed';
-  if (r.level === 'GREEN') return 'No manipulation detected';
+  if (r.status === 'no-face') return 'No face in view — nothing to check';
+  if (r.level === 'GREEN') return 'No sign of AI-generated video found (this does not prove the caller is real)';
   if (r.level === 'YELLOW') return 'Be cautious — possible manipulation';
   return 'Likely AI-generated video';
 }
@@ -45,8 +47,8 @@ function Pill({ r, fps }: { r: PeopleResult; fps: number }) {
       title={`${label(r)} · ${(r.smoothed * 100).toFixed(0)}% · ${r.backend} · ${fps.toFixed(1)} fps`}
       class="flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] text-white shadow font-sans"
     >
-      <span class={`inline-block h-2.5 w-2.5 rounded-full ${COLORS[r.level]}`} />
-      <span>{r.level === 'GREEN' ? 'Real' : r.level === 'YELLOW' ? 'Unsure' : 'Fake?'}</span>
+      <span class={`inline-block h-2.5 w-2.5 rounded-full ${r.status === 'no-face' ? NEUTRAL : COLORS[r.level]}`} />
+      <span>{r.status === 'no-face' ? 'No face' : r.level === 'GREEN' ? 'No fake found' : r.level === 'YELLOW' ? 'Unsure' : 'Fake?'}</span>
     </div>
   );
 }
