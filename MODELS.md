@@ -66,7 +66,7 @@ A BERT-family **token-classification** model (e.g. a cased `bert-base-NER` expor
 
 Median 72 ms per prompt on WASM. Known limits: small fixture, so treat the recall as indicative, not a benchmark. The model over-flags some acronyms (it redacted `UDP` as an ORG in an entity-free prompt, 1 of 4 negatives), and it was trained on English news text.
 
-**INT8 models run on WASM only.** The WebGPU provider has no proper kernels for INT8 (`MatMulInteger`, `DynamicQuantizeLinear`): in the same test it found almost no entities (47%, same as the fallback) and was about 4x slower (301 ms vs 72 ms). `getModel(file, ['wasm'])` pins it. Use FP16/FP32 graphs if you want WebGPU.
+**INT8 models run on WASM only.** `getModel(file, ['wasm'])` pins it. In our first test (headless Chrome, which uses a *software* GPU) the WebGPU provider found almost no entities (47%, same as the fallback) and was about 4x slower (301 ms vs 72 ms). Re-checked later on a **real Apple Metal GPU**: WebGPU was still slower than WASM for this INT8 BERT (130 ms vs 88 ms for a 24-token prompt) and its logits differed (max difference 0.73), so the pin stays, but the earlier "unusable output" was partly a software-GPU artefact. FP32 graphs behave very differently (see the People section).
 
 ## Installed model: People deepfake classifier
 
@@ -93,11 +93,16 @@ Median 72 ms per prompt on WASM. Known limits: small fixture, so treat the recal
 
 An independent Python/PIL + ONNX Runtime run on the FP32 model gives the same numbers (75% at 224 px, AUC 0.78), so the in-browser pipeline and INT8 quantization are not the cause of any of the above.
 
+**Follow-up checks** (the 80-image dev set above plus a disjoint 200-image test set from the same dataset: 100 real, 34 face-swap, 33 inpainting, 33 text-to-image):
+- **Re-tuning the threshold does not help face-swaps.** Their median score is 0.000, the same as real photos (AUC 0.42 dev / 0.62 test). Lowering the threshold to 0.01 catches only 21% of swaps on test while 10% of real photos are flagged.
+- **The current pipeline is at chance on a realistic video-call frame.** Pasting each face small into a 16:9 tile (face about 45% of the tile height) drops AUC to 0.52 dev / 0.56 test, because the whole tile is squashed into the model. **Cropping to the detected face first** (the UltraFace detector already in the repo) restores it to 0.74 / 0.77 and lifts face-swap AUC from 0.62 to 0.80 on test (0.42 to 0.68 dev). It costs a little on generated faces (text-to-image AUC 0.995 to 0.934 on test). So the sampler must send the whole frame and the offscreen document must crop; today it squashes the frame first. Not implemented yet.
+- Even cropped, face-swap recall at a threshold that keeps false alarms under 1% is only about 6-21%. A detector trained on face-swaps would be needed for a real fix. The tile is a flat grey background, a simplification of real calls.
+
 **What this does and does not mean. Read before trusting the pill:**
 - It detects *AI-generated* faces much better than *face-swapped* ones. **It did not catch a single face-swap in the fixture, and face-swap is the most common live-call deepfake.** A green pill means "no generator artefacts seen", not "verified real".
 - The fixture is small (80), the real photos are Wikipedia portraits (non-square, some greyscale) and the fakes are 512x512 squares, so part of what it separates may be image style. Webcam video (compression, lighting, motion) is untested; false-positive and false-negative rates on real calls are unknown.
-- 640 ms per frame is far above the 150 ms budget, so the adaptive sampler settles at 0.5 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip.
-- INT8 on WASM only (see the NER note on WebGPU). Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
+- 640 ms per frame (WASM INT8) is far above the 150 ms budget, so the adaptive sampler settles at 0.5 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip.
+- INT8 on WASM only (see the NER note on WebGPU). **The same model in FP32 (87 MB) runs 12x faster on a real GPU**: 53 ms per frame on Apple Metal WebGPU against 627 ms on WASM, output identical (max difference 8e-6). That is not wired in yet; it would bring the model under the 150 ms budget. Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
 
 ## Installed: Pixel cloak (per-image adversarial face cloak)
 

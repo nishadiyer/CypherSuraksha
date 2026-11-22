@@ -66,9 +66,13 @@ async function loadOrt(): Promise<Ort> {
 /**
  * Loads (once) an InferenceSession for a packaged .onnx. Prefers WebGPU and
  * falls back to WASM SIMD, unless `only` restricts the providers. INT8 graphs
- * (MatMulInteger / DynamicQuantizeLinear) must pass `['wasm']`: the WebGPU
- * provider has no proper kernels for them and returned unusable output (and
- * was ~4x slower) for the NER model in tests/e2e/gateNer.mjs.
+ * (MatMulInteger / DynamicQuantizeLinear) should pass ['wasm']: on a real Apple GPU
+ * the WebGPU provider was no faster for them (NER 130 vs 88 ms, deepfake 605 vs
+ * 646 ms) and its outputs differed from WASM (logits up to 0.7 apart); under the
+ * software GPU used by headless CI it returned unusable output. FP32 graphs are the
+ * opposite: the FP32 deepfake model ran 12x faster on WebGPU with identical output
+ * (see MODELS.md). The cloak gradient graphs cannot use WebGPU at all (MaxPool with
+ * indices is unsupported there).
  * Resolves null when the model is not installed, which callers treat as
  * "use the deterministic fallback".
  */
