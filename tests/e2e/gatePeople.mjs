@@ -4,6 +4,9 @@ import { check, DIST, launch } from './harness.mjs';
 const MODELS = new URL('../../public/models/', import.meta.url).pathname;
 const FIX = new URL('../fixtures/deepfake/', import.meta.url).pathname;
 const FILES = ['people-deepfake.int8.onnx', 'people-deepfake.fp32.onnx', 'people-deepfake.config.json', 'face-detector.ultraface.onnx'];
+// Optional second detector (face-swaps): npm run models:gend. Only used on a real GPU.
+const GEND = ['people-gend.fp16.onnx', 'people-gend.config.json'];
+const HAVE_GEND = GEND.every((f) => existsSync(MODELS + f));
 const MIN_AUC_PLAIN = 0.8; // Python reference with the same crop: 0.85 on this set
 const MIN_AUC_TILE = 0.65; // Python reference: 0.74 (the pre-crop pipeline scored 0.52, chance)
 const REAL_GPU = !!process.env.E2E_REAL_GPU;
@@ -27,7 +30,7 @@ export default async function gatePeople() {
   const dir = `${DIST}/models`;
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  for (const f of FILES) copyFileSync(MODELS + f, `${dir}/${f}`);
+  for (const f of [...FILES, ...(HAVE_GEND ? GEND : [])]) copyFileSync(MODELS + f, `${dir}/${f}`);
   const ctx = await launch({ protocolTimeout: 120000 });
   try {
     // Sends a frame exactly as the content script now does: whole frame, aspect kept, longest side <= 640.
@@ -62,7 +65,7 @@ export default async function gatePeople() {
       const b64 = readFileSync(FIX + it.file).toString('base64');
       for (const [mode, out] of [['plain', plain], ['tile', tile]]) {
         const r = await send(b64, mode, `${mode}${i}`);
-        out.push({ ...it, score: r.data.status === 'no-face' ? null : r.data.frameScore, backend: r.data.backend, ms: r.latencyMs });
+        out.push({ ...it, score: r.data.status === 'no-face' ? null : r.data.frameScore, backend: r.data.backend, ms: r.latencyMs, gend: r.data.gend, t: r.data.timingMs });
       }
     }
     const scored = (rows) => rows.filter((r) => r.score !== null);
@@ -74,6 +77,9 @@ export default async function gatePeople() {
     const byGen = {};
     for (const r of scored(plain)) { const g = (byGen[r.generator] ??= [0, 0]); g[1]++; if ((r.score >= 0.5) === (r.label === 'fake')) g[0]++; }
     console.log(`  info  n=${plain.length}; backend ${backends}; median ${lat[lat.length >> 1].toFixed(0)} ms/frame (detect + crop + classify); ${((Date.now() - t0all) / 1000).toFixed(0)} s total`);
+    const med = (xs) => { const v = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b); return v.length ? v[v.length >> 1].toFixed(0) : '-'; };
+    const th = (rows) => rows.map((r) => r.t);
+    console.log(`  info  median stage ms: detect+crop ${med(th(scored(plain)).map((t) => t?.detect))}, main model ${med(th(scored(plain)).map((t) => t?.main))}, GenD ${med(th(scored(plain)).map((t) => t?.gend))} (run ${med(th(scored(plain)).map((t) => t?.gendRun))}); first 10 frames total ${med(scored(plain).slice(0, 10).map((r) => r.ms))}, last 10 ${med(scored(plain).slice(-10).map((r) => r.ms))}`);
     console.log(`  info  face found: plain ${(rate(plain) * 100).toFixed(0)}%, tile ${(rate(tile) * 100).toFixed(0)}%`);
     console.log(`  info  AUC plain ${aucPlain.toFixed(3)}, call-tile ${aucTile.toFixed(3)}; accuracy @0.5 (plain) ${(correct.length / scored(plain).length * 100).toFixed(1)}%`);
     console.log(`  info  correct per source @0.5: ${Object.entries(byGen).map(([g, [h, t]]) => `${g} ${h}/${t}`).join(', ')}`);
@@ -86,9 +92,18 @@ export default async function gatePeople() {
     check('a frame with no face reports "no face" instead of guessing', blank.data?.status === 'no-face' && blank.data?.level === 'YELLOW' && !blank.data?.sustainedRed, JSON.stringify(blank.data));
     if (REAL_GPU) {
       check('real GPU: FP32 model on WebGPU is selected', backends.length === 1 && backends[0] === 'webgpu', backends.join());
-      check('real GPU: detect + crop + classify under the 150 ms budget (median)', lat[lat.length >> 1] < 150, `${lat[lat.length >> 1].toFixed(0)} ms`);
+      if (HAVE_GEND) {
+        const used = scored(plain).filter((r) => typeof r.gend === 'number').length;
+        const swap = byGen.insight ?? [0, 1];
+        console.log(`  info  second detector (GenD) ran on ${used}/${scored(plain).length} frames; face-swaps caught @0.5: ${swap[0]}/${swap[1]} (main model alone: 1/13)`);
+        check('real GPU: the second detector (GenD) runs on every scored frame', used === scored(plain).length, `${used}/${scored(plain).length}`);
+        check('real GPU: face-swap recall with both detectors >= 4/13 (main model alone: 1/13)', swap[0] >= 4, `${swap[0]}/${swap[1]}`);
+        check('real GPU: both detectors + detection stay usable (< 1500 ms per frame, median; machine-load dependent, see MODELS.md)', lat[lat.length >> 1] < 1500, `${lat[lat.length >> 1].toFixed(0)} ms`);
+      } else {
+        check('real GPU: detect + crop + classify under the 150 ms budget (median)', lat[lat.length >> 1] < 150, `${lat[lat.length >> 1].toFixed(0)} ms`);
+      }
     } else {
-      check('software GPU: falls back to INT8 on WASM', backends.length === 1 && backends[0] === 'wasm', backends.join());
+      check('software GPU: falls back to INT8 on WASM (second detector not used)', backends.length === 1 && backends[0] === 'wasm' && scored(plain).every((r) => r.gend === undefined), backends.join());
     }
   } finally {
     await ctx.cleanup();

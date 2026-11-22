@@ -35,3 +35,14 @@ describe('GPU detection', () => {
     expect(looksLikeRealGpu(undefined)).toBe(false);
   });
 });
+
+describe('GenD calibration', () => {
+  it('maps lo to 0 and hi to 1 and clamps outside', async () => {
+    const { calibrate } = await import('../src/offscreen/shields/people/gend');
+    expect(calibrate(0.41, 0.41, 0.95)).toBe(0);
+    expect(calibrate(0.95, 0.41, 0.95)).toBe(1);
+    expect(calibrate(0.68, 0.41, 0.95)).toBeCloseTo(0.5, 5);
+    expect(calibrate(0.1, 0.41, 0.95)).toBe(0);
+    expect(calibrate(0.999, 0.41, 0.95)).toBe(1);
+  });
+});

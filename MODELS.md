@@ -121,8 +121,41 @@ An independent Python/PIL + ONNX Runtime run on the FP32 model gives the same nu
 
 Accuracy at a fixed 0.5 threshold went **down** (75% to about 70%) while AUC went up: cropping makes the scores rank better but lowers generated-face scores, so 0.5 is no longer the best cut-off. Face-swap detection is still essentially absent (1/13); cropping improved its *ranking* (AUC 0.62 to 0.80 on the larger test set) but not its recall at a usable threshold. The detector misses the face in about 19% of small-face tile frames (those frames are skipped, not guessed). Real webcam video is still untested.
 
+**Second detector for face-swaps (optional, real GPU only): GenD CLIP ViT-L/14.**
+
+The main model above is weak on face-swaps. I tested every ONNX-ready alternative on the same cropped faces (80 dev + 200 test images): the `prithivMLmods` Exp-02-21 / Exp-02-22 pair, `AI-vs-Deepfake-vs-Real` and the `dima806`-derived `deepfake_vs_real_image_detection` all scored **at or below chance** (AUC 0.29-0.52; three of them rated the real Wikipedia portraits as *more* fake, i.e. they key on image style). The KoreaPeter FF++ EfficientNets are gated (a logged-in Hugging Face account must accept terms), so they were not tried. The one that worked is GenD (`HoopitAI/video-deepfake-detection-GenD_CLIP_L_14_FF`, MIT): OpenAI CLIP ViT-L/14 with only its LayerNorms fine-tuned on **FaceForensics++**, which contains face-swaps.
+
+| Held-out check (offline, 192 test images, thresholds from the 78-image dev split only) | CommunityForensics alone | GenD alone | **Both (either flags it)** |
+|---|---|---|---|
+| Face-swap AUC (test) | 0.79 | 0.86 | **0.92** (rank-averaged) |
+| False alarms on real photos | 1.0% | 2.1% | 3.1% |
+| Face-swaps caught | 16% | 58% | **65%** |
+| Inpainting caught | 75% | 31% | 81% |
+| Text-to-image caught | 81% | 28% | 84% |
+
+They are complementary (GenD sees swaps, CommunityForensics sees generated faces), so the frame score is `max(main, g(GenD))` where `g` maps GenD's probability linearly from 0.41 (its 90th percentile on real dev photos) to 0.95. At a 0.5 cut-off on the test split that flags 2.1% of real photos and catches 58% of swaps, 69% of inpainting and 78% of text-to-image.
+
+**Measured in the extension** (`E2E_REAL_GPU=1 node tests/e2e/run.mjs people`, real Apple GPU, 80-image dev set, both detectors):
+
+| | Main model only (real GPU) | **Both detectors** |
+|---|---|---|
+| AUC, whole frames | 0.825 | **0.938** |
+| AUC, face in a call tile | 0.732 | **0.808** |
+| Accuracy at 0.5 | 68.4% | **84.2%** |
+| **Face-swaps caught** | **1/13** | **10/13** |
+| Inpainting / text-to-image caught | 5/13, 8/12 | 8/13, 9/12 |
+| Real called real | 38/38 | 37/38 |
+
+**Costs and limits, plainly:**
+- Build with `npm run models:gend` (needs Python 3.9+, about 4 GB of disk, downloads 1.2 GB of pinned, checksummed weights, **produces a 609 MB FP16 file**). `scripts/people/export_gend.py` rebuilds the architecture from the weights with the standard `transformers` CLIP vision model, so the repository's own Python is never executed. The ONNX output matches PyTorch (fp32 logit 0.14537 vs 0.14536; fp16 on WebGPU within about 0.04 in logit).
+- **It only runs on a real GPU (WebGPU, FP16).** Software renderers are rejected and a timed self-test (under 600 ms) must pass; otherwise the shield uses the main model alone, exactly as before. There is no WASM fallback (a 1.2 GB FP32 or ~300 MB INT8 CLIP-L would take seconds per frame).
+- **Speed:** GenD is the slow part. Per frame on the dev Mac: face detection about 9 ms, main model 44-87 ms, **GenD 255-570 ms** (a standalone page measured 95-175 ms; the same GPU gives very different numbers depending on what else is loading it). Expect about 0.3-0.7 s per frame with both, so the adaptive sampler settles at 0.5-1 FPS.
+- **Size:** with this model the extension's model files total about 1.1 GB.
+- **Licence:** the code and CLIP backbone are MIT, but the weights were fine-tuned on FaceForensics++, whose own terms are research-oriented. Check them before any commercial release.
+- **Evidence is thin:** the dev/test fixtures are the same dataset, whose face-swaps are InsightFace swaps; the real photos are Wikipedia portraits and the fakes 512 px squares (a style confound); the GenD calibration comes from only 40 real dev photos; webcam video is untested. Treat 58-65% swap recall as promising, not proven.
+
 **What this does and does not mean. Read before trusting the pill:**
-- It detects *AI-generated* faces much better than *face-swapped* ones. **It did not catch a single face-swap in the fixture, and face-swap is the most common live-call deepfake.** A green pill means "no generator artefacts seen", not "verified real".
+- The main model detects *AI-generated* faces much better than *face-swapped* ones: **on its own it did not catch a single face-swap in the original fixture, and face-swap is the most common live-call deepfake.** The optional GenD detector (above) fixes most of that on a real GPU. A green pill means "no sign of AI generation found", not "verified real".
 - The fixture is small (80), the real photos are Wikipedia portraits (non-square, some greyscale) and the fakes are 512x512 squares, so part of what it separates may be image style. Webcam video (compression, lighting, motion) is untested; false-positive and false-negative rates on real calls are unknown.
 - On a machine without a real GPU the INT8 WASM path takes about 0.85 s per frame (detection + crop + classify), so the adaptive sampler settles at 0.5-1 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip. With a real GPU it is about 80 ms.
 - INT8 on WASM only (see the NER note on WebGPU). **The same model in FP32 (87 MB) runs 12x faster on a real GPU**: 53 ms per frame on Apple Metal WebGPU against 627 ms on WASM, output identical (max difference 8e-6). This is now wired in (see below). Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.

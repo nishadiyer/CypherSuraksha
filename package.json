@@ -14,7 +14,8 @@
     "package": "npm run build && node scripts/package.mjs",
     "models": "node scripts/fetch-models.mjs",
     "fixtures": "python3 -I scripts/fetch-deepfake-fixture.py",
-    "models:cloak": "bash scripts/cloak/build-models.sh"
+    "models:cloak": "bash scripts/cloak/build-models.sh",
+    "models:gend": "bash scripts/people/build-gend.sh"
   },
   "dependencies": {
     "onnxruntime-web": "^1.31.1",

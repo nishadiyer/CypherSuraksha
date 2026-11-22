@@ -78,6 +78,10 @@ export interface PeopleResult {
   level: 'GREEN' | 'YELLOW' | 'RED';
   sustainedRed: boolean;
   backend: string;
+  /** per-stage wall time in ms (diagnostics only, no frame data) */
+  timingMs?: { detect: number; main: number; gend?: number; gendPrep?: number; gendRun?: number };
+  /** calibrated score of the optional face-swap detector (GenD), when it ran on this frame */
+  gend?: number;
   /** 'no-face': the frame had no usable face, so it was not scored (score fields are neutral). */
   status?: 'no-face';
 }

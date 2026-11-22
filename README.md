@@ -61,7 +61,7 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## Models
 
-The extension works with no model files, using deterministic fallbacks. `npm run models` installs the Privacy NER and People deepfake models; `npm run models:cloak` builds the Pixel cloak models. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
+The extension works with no model files, using deterministic fallbacks. `npm run models` installs the Privacy NER and People deepfake models; `npm run models:cloak` builds the Pixel cloak models; `npm run models:gend` builds the optional face-swap detector. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
 
 ## Supported sites
 
@@ -75,6 +75,6 @@ Video: Google Meet, Zoom (`*.zoom.us`), WhatsApp Web.
 
 - Site selectors for the prompt interceptors target the current DOM of each chat app. They are only tested against stand-in pages, and sites change their markup, so they may need updating.
 - Pixels: with the cloak models installed (`npm run models:cloak`) each face is optimised against a FaceNet ensemble. In our test that cut FaceNet identification from 97.5% to about 30% and survived JPEG, but a different recogniser (ArcFace) was **barely affected** (95%), and it takes 8-15 s per photo (MODELS.md). Without the models the fallback is bounded noise, which our test showed has **no effect**, so treat it as metadata stripping only.
-- Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. With the installed model (`npm run models`) it finds the face, crops it, and catches many AI-generated faces (about 80 ms/frame on a real GPU, about 0.85 s without one), but it **caught only 1 of 13 face-swaps in our 80-image test** (MODELS.md), so the green "No fake found" pill does not mean the caller is real. Frames with no face are not scored (grey "No face"). Detectors are advisory and can be wrong either way.
+- Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. With the installed model (`npm run models`) it finds the face, crops it, and catches many AI-generated faces (about 80 ms/frame on a real GPU, about 0.85 s without one), but on its own it **caught only 1 of 13 face-swaps in our 80-image test**. The optional GenD face-swap detector (`npm run models:gend`, 609 MB, real GPU only) raises that to 10 of 13 with 37 of 38 real photos still called real (MODELS.md), but both numbers come from a small test and real webcam calls are untested, so the green "No fake found" pill does not mean the caller is real. Frames with no face are not scored (grey "No face"). Detectors are advisory and can be wrong either way.
 - Prompt redaction without an NER model catches structured data and name cues ("my name is …"), not arbitrary names. Run `npm run models` to install the real NER model (see MODELS.md); it is not committed because of its size.
 - JavaScript strings cannot be zeroed; "zero-fill" applies to the typed arrays and tensors that hold images, frames and tokens.

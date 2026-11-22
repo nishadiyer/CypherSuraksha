@@ -4,6 +4,7 @@ import { disposeModels } from '../ort';
 import { detectFaces, detectorInstalled } from './pixel/faceDetect';
 import { classifyFrame } from './people/classifier';
 import { cropBox, largestFace } from './people/crop';
+import { gendScore, lastGendTiming } from './people/gend';
 import { TemporalSmoother } from './people/smoother';
 
 const sessions = new Map<string, TemporalSmoother>();
@@ -15,7 +16,8 @@ function sweep(): void {
 }
 
 /** Detects the largest face and returns a square RGBA crop around it (black where it leaves the frame), or null. */
-async function cropToFace(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): Promise<{ rgba: Uint8ClampedArray<ArrayBuffer>; side: number } | null> {
+async function cropToFace(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): Promise<{ rgba: Uint8ClampedArray<ArrayBuffer>; side: number; ms: number } | null> {
+  const t0 = performance.now();
   const bitmap = await createImageBitmap(new ImageData(rgba, w, h));
   let canvas: OffscreenCanvas | undefined;
   try {
@@ -27,7 +29,7 @@ async function cropToFace(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: nu
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, box.side, box.side);
     ctx.drawImage(bitmap, -box.x, -box.y);
-    return { rgba: ctx.getImageData(0, 0, box.side, box.side).data, side: box.side };
+    return { rgba: ctx.getImageData(0, 0, box.side, box.side).data, side: box.side, ms: performance.now() - t0 };
   } finally {
     bitmap.close();
     if (canvas) canvas.width = canvas.height = 0;
@@ -42,8 +44,9 @@ export const peopleShield: Shield = {
     const key = `${req.tabId}:${p.sessionId}`;
     sweep();
     let rgba: Uint8ClampedArray<ArrayBuffer> | undefined = new Uint8ClampedArray(b64ToBytes(p.b64).buffer);
-    let frame: { score: number; backend: string } | null = null;
+    let frame: { score: number; backend: string; gend?: number } | null = null;
     let noFace = false;
+    const timing: NonNullable<PeopleResult['timingMs']> = { detect: 0, main: 0 };
     try {
       if (await detectorInstalled()) {
         // Whole frame in, face crop out: the model is at chance on a full video tile (MODELS.md).
@@ -51,8 +54,20 @@ export const peopleShield: Shield = {
         if (crop) {
           zero(rgba);
           rgba = undefined;
+          timing.detect = crop.ms;
           try {
+            const tm = performance.now();
             frame = await classifyFrame(crop.rgba, crop.side, crop.side);
+            timing.main = performance.now() - tm;
+            // Optional second detector (face-swaps). The frame score is the larger of the two.
+            const tg = performance.now();
+            const g = frame ? await gendScore(crop.rgba, crop.side, crop.side) : null;
+            if (g !== null) {
+              timing.gend = performance.now() - tg;
+              timing.gendPrep = lastGendTiming.prep;
+              timing.gendRun = lastGendTiming.run;
+            }
+            if (frame && g !== null) frame = { ...frame, score: Math.max(frame.score, g), gend: g };
           } finally {
             zero(crop.rgba);
           }
@@ -82,6 +97,8 @@ export const peopleShield: Shield = {
       level: s.level,
       sustainedRed: s.sustainedRed,
       backend: frame?.backend ?? 'unavailable',
+      gend: frame?.gend,
+      timingMs: timing,
     };
     return {
       requestId: req.requestId,

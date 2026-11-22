@@ -45,7 +45,7 @@ function pickModel(size: number): Promise<LoadedModel | null> {
   })());
 }
 
-async function fastEnough(m: LoadedModel, size: number): Promise<boolean> {
+export async function fastEnough(m: LoadedModel, size: number, budgetMs = FP32_BUDGET_MS): Promise<boolean> {
   const { ort, session } = m;
   const input = new Float32Array(3 * size * size);
   const run = async (): Promise<number> => {
@@ -63,7 +63,7 @@ async function fastEnough(m: LoadedModel, size: number): Promise<boolean> {
   };
   try {
     await run(); // warm-up (shader compilation)
-    return (await run()) <= FP32_BUDGET_MS;
+    return (await run()) <= budgetMs;
   } catch {
     return false;
   } finally {
@@ -72,7 +72,7 @@ async function fastEnough(m: LoadedModel, size: number): Promise<boolean> {
 }
 
 /** Resize RGBA to size x size via the GPU/Skia path; returns pixel data owned by the caller. */
-async function resize(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number, size: number): Promise<Uint8ClampedArray> {
+export async function resize(rgba: Uint8ClampedArray<ArrayBuffer>, w: number, h: number, size: number): Promise<Uint8ClampedArray> {
   if (w === size && h === size) return rgba;
   const bmp = await createImageBitmap(new ImageData(rgba, w, h), { resizeWidth: size, resizeHeight: size, resizeQuality: 'medium' });
   try {

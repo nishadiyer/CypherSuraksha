@@ -1,0 +1,9 @@
+# Dev-time only: used to build the GenD deepfake model. The extension itself never runs Python.
+torch==2.8.0
+transformers==4.57.6
+safetensors>=0.4
+onnx==1.19.1
+onnxscript==0.7.2
+onnxruntime==1.19.2
+onnxconverter-common>=1.14
+numpy==2.0.2
