@@ -1,0 +1,21 @@
+{
+  "Documents": [
+    {"label": "Plan of record", "path": "/Users/rohanreddyk/projects/ai-shield/phasedoc/PLAN.md"},
+    {"label": "Architecture", "path": "/Users/rohanreddyk/projects/ai-shield/phasedoc/ARCHITECTURE.md"},
+    {"label": "Buildplan mirror", "path": "/Users/rohanreddyk/projects/ai-shield/phasedoc/BUILDPLAN.md"},
+    {"label": "README", "path": "/Users/rohanreddyk/projects/ai-shield/README.md"},
+    {"label": "MODELS", "path": "/Users/rohanreddyk/projects/ai-shield/MODELS.md"}
+  ],
+  "Code": [
+    {"label": "Repository", "url": "https://github.com/rrkcm/CypherKaavach"},
+    {"label": "Source", "path": "/Users/rohanreddyk/projects/ai-shield/src"},
+    {"label": "End-to-end tests", "path": "/Users/rohanreddyk/projects/ai-shield/tests/e2e"}
+  ],
+  "Commands": [
+    {"label": "Build + manifest gate", "path": "npm run build"},
+    {"label": "Unit tests", "path": "npm test"},
+    {"label": "Real-Chrome e2e", "path": "node tests/e2e/run.mjs"},
+    {"label": "Static audit", "path": "npm run audit:final"},
+    {"label": "Tick a leaf (after its test ran)", "path": "python3 phasedoc/plan.py tick <id> --ran --note '...'"}
+  ]
+}

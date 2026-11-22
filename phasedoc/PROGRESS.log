@@ -1,0 +1,39 @@
+2026-11-22 11:04:00  INIT seeded 64 tasks
+2026-11-22 11:07:23  DONE    P0.1.1 Vite + crxjs Manifest V3 build -- 2026-11-22 seeding: npm run build -> GATE OK
+2026-11-22 11:07:23  DONE    P0.1.2 Minimal permissions and strict CSP -- 2026-11-22 seeding: verify-build.mjs GATE OK (4 permissions, connect-src 'none')
+2026-11-22 11:07:23  DONE    P0.1.3 host_permissions mirror the content-script match lists -- 2026-11-22 seeding: python check, 37 hosts == union of content_scripts matches
+2026-11-22 11:07:23  DONE    P0.2.1 Service-worker router validates sender and forwards -- 2026-11-22 e2e gate12 6 tabs redacted
+2026-11-22 11:07:23  DONE    P0.2.2 Offscreen document is a singleton under concurrent tabs -- 2026-11-22 e2e gate12 singleton
+2026-11-22 11:07:23  DONE    P0.2.3 One dedicated Web Worker per shield -- 2026-11-22 e2e onnx gate (models run inside per-shield workers)
+2026-11-22 11:07:23  DONE    P0.2.4 Injected UI lives in closed Shadow DOM -- 2026-11-22 e2e gate3 closed shadow root
+2026-11-22 11:07:23  DONE    P0.2.5 CSP blocks every outbound request from the engine -- 2026-11-22 e2e gate12 violations fired
+2026-11-22 11:07:23  DONE    P1.1.1 Enter and Send-click intercepted on textarea composers -- 2026-11-22 vitest: 25/25 incl. tests/interceptor.test.ts
+2026-11-22 11:07:23  DONE    P1.1.2 Contenteditable composers with capture-phase page handlers -- 2026-11-22 e2e gate6 enter+click on contenteditable
+2026-11-22 11:07:23  DONE    P1.1.3 Fail-safe: never send the original if swap or shield fails -- 2026-11-22 vitest 'fails safe'; writeComposer verifies, blocks send if editor refuses
+2026-11-22 11:07:23  DONE    P1.2.1 Deterministic detectors: email, phone, SSN, Aadhaar, cards, API keys -- 2026-11-22 vitest tests/privacy.test.ts
+2026-11-22 11:07:23  DONE    P1.2.2 Capitalized full names and intro phrases -- 2026-11-22 vitest fallback detector coverage
+2026-11-22 11:07:23  DONE    P1.2.3 Salted SHA-256 'Never share' vault -- 2026-11-22 e2e gate5 + vitest vault
+2026-11-22 11:07:23  DONE    P1.2.4 NER ONNX pipeline (tokenizer, BIO decode) runs in real ORT -- 2026-11-22 e2e onnx gate with hand-built NER graph (not a real model)
+2026-11-22 11:07:23  DONE    P1.3.1 Reversible deterministic placeholders -- 2026-11-22 vitest swap determinism
+2026-11-22 11:07:23  DONE    P1.3.2 Placeholders restored on screen in replies -- 2026-11-22 e2e gate2
+2026-11-22 11:07:23  DONE    P1.3.3 Per-tab map in storage.session, purged on close and navigation -- 2026-11-22 e2e gate2 + vitest session
+2026-11-22 11:07:23  DONE    P2.1.1 <input type=file> change events intercepted and re-injected -- 2026-11-22 e2e gate3
+2026-11-22 11:07:24  DONE    P2.1.2 Drag-and-drop intercepted -- 2026-11-22 e2e gate3
+2026-11-22 11:07:24  DONE    P2.1.3 Badge with one-click 'Bypass on this site' -- 2026-11-22 e2e gate3
+2026-11-22 11:07:24  DONE    P2.2.1 In-memory ImageBitmap/OffscreenCanvas pipeline, bounded perturbation -- 2026-11-22 e2e gate3 max<=5/255 (fallback noise)
+2026-11-22 11:07:24  DONE    P2.2.2 Buffers released and nothing persisted -- 2026-11-22 e2e gate3 + audit:final
+2026-11-22 11:07:24  DONE    P2.2.3 Cloak ONNX path in real ORT with delta clamped to budget -- 2026-11-22 e2e onnx gate with hand-built cloak graph (not a real model)
+2026-11-22 11:07:24  DONE    P3.1.1 Frames sampled at 1-2 FPS onto an OffscreenCanvas -- 2026-11-22 e2e gate4 0.5-2 FPS on captureStream
+2026-11-22 11:07:24  PARTIAL P3.1.2 Adaptive throttle above 150 ms or without WebGPU -- 2026-11-22 unit tests (6 sampler tests) pass; e2e heavy-load back-off passed 3/3 earlier but FAILED in the latest full run (10 frames/10s vs baseline) - flaky, CPU throttle may not reach the worker thread. Not ticked.
+2026-11-22 11:07:24  DONE    P3.2.1 ONNX frame classifier with 5-frame rolling smoothing -- 2026-11-22 e2e gate4 + vitest smoother (stand-in model)
+2026-11-22 11:07:24  DONE    P3.2.2 Traffic-light pill and circuit-breaker modal -- 2026-11-22 e2e gate4
+2026-11-22 11:07:24  DONE    P3.2.3 No frame ever written to storage -- 2026-11-22 e2e gate4
+2026-11-22 11:07:24  DONE    P4.1.1 Master and per-pillar toggles, trusted-site allowlist -- 2026-11-22 e2e gate5
+2026-11-22 11:07:24  DONE    P4.1.2 Never-share input hashed on save -- 2026-11-22 e2e gate5
+2026-11-22 11:07:24  DONE    P4.1.3 Local privacy ledger counters -- 2026-11-22 e2e gate5
+2026-11-22 11:07:24  DONE    P4.2.1 README.md and MODELS.md present -- 2026-11-22 test -s README.md MODELS.md
+2026-11-22 11:07:24  DONE    P4.2.2 Final audit passes -- 2026-11-22 npm run audit:final -> Final audit passed
+2026-11-22 11:07:24  NOTE    P1.2.5 No real NER model yet. Candidate: INT8 token-classification export (e.g. bert-base-NER); must record source + licence.
+2026-11-22 11:07:24  NOTE    P2.2.4 No suitable public ONNX adversarial-cloak model identified; fallback is bounded noise only.
+2026-11-22 11:07:24  NOTE    P3.2.4 No real deepfake model installed; People shield reports 'Unverified'.
+2026-11-22 11:07:24  NOTE    P5.1.1 Not run: selectors only tested against stand-in pages.

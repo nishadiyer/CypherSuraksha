@@ -1,0 +1,8 @@
+{
+  "P0": "The extension has three layers that only talk through Chrome's built-in messaging, and its Content Security Policy forbids every network connection. This phase proves that, in a real browser, nothing can leave and the layers cooperate when many tabs ask at once.",
+  "P1": "Before a chat message is sent, names, emails, phone numbers and secrets are swapped for placeholders; in the reply the placeholders are swapped back for the user's eyes only. Rules catch structured data today; a trained named-entity-recognition (NER) model for free-text names is the open item.",
+  "P2": "Uploaded photos are intercepted, lightly altered in ways people cannot see, stripped of hidden location data, and handed to the site. The plumbing is proven; a real trained cloaking model and a measurement that it helps are still open.",
+  "P3": "During a video call the extension samples frames, asks a model how likely they are to be computer-generated, smooths the answer over five frames and shows a green, yellow or red dot. The mechanics are tested with a stand-in model; a real deepfake detector is not installed yet.",
+  "P4": "The toolbar popup controls the shields, stores 'never share' words only as one-way hashes, and shows simple counters. The written guides and the automated audit are finished.",
+  "P5": "All testing so far used stand-in pages. These leaves wait for real runs on the real chat, upload and call sites, plus Chrome Web Store packaging. They stay open until someone does them."
+}
