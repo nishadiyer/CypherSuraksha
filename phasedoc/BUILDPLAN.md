@@ -94,9 +94,10 @@
       - _note:_ 2026-11-22 e2e onnx gate with hand-built cloak graph (not a real model)
     - [ ] **P2.2.4** Real learned adversarial cloak model installed
       - _acceptance:_ public/models/pixel-cloak.fp16.onnx is a real model with a recorded source and licence
-      - _note:_ No suitable public ONNX adversarial-cloak model identified; fallback is bounded noise only.
+      - _note:_ 2026-11-22 feasibility probe (no shipped model yet): no pretrained feed-forward cloak model exists publicly. Alternative built in scratch: per-image PGD (MI-FGSM) against pretrained FaceNet embedders (MIT, facenet-pytorch vggface2 + casia-webface). Gradient-of-embedding graph exported to pure ONNX (make_fx + exact rewrites of conv/maxpool/relu/bn backward), matches PyTorch to ~1e-9, runs in onnxruntime-web WASM at ~123 ms/step (106 MB per embedder fp32). Not wired into the extension yet.
     - [ ] **P2.2.5** Measured effect on a real face/object recogniser
       - _acceptance:_ benchmark script reports recogniser confidence drop on a fixture set; result written to notes
+      - _note:_ 2026-11-22 prototype benchmark (Python, same ONNX graphs): LFW, 40 identities, cloaked gallery vs clean probe, rank-1 id, clean=97.5% on all three recognisers. Random noise +-8/255: no change (97.5%) = current fallback gives no protection. PGD vs FaceNet ensemble: +-8/255 -> VGGFace2 0%, CASIA 0%, ArcFace R50 (held out, research-only licence, eval only) 97.5% (no transfer); +-16 -> ArcFace 87.5%; +-32 -> 52.5%. PGD vs VGGFace2 alone at +-8: VGGFace2 20%, CASIA 55%. Conclusion so far: strong against FaceNet-family recognisers at invisible budgets, weak transfer to a different family. Not yet measured in the extension; leaf stays open.
 
 ## P3 Pillar 3 — People: video-call deepfake warning  (6/6 done, 0 partial, 0 open)
 ### P3.1 Sampling
