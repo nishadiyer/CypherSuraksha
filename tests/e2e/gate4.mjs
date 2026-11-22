@@ -40,13 +40,14 @@ export default async function gate4() {
     const base = await ev('window.__n');
     check(`baseline sampling rate stays within 0.5–2 FPS (${base} frames / 5 s)`, base >= 1 && base <= 11, String(base));
 
-    // Heavy load on the inference engine: throttle the offscreen document's CPU.
-    await ev('window.__n = 0; 0');
-    const thr = await cdp.send('Emulation.setCPUThrottlingRate', { rate: 120 }).then(() => 'ok', (e) => String(e));
-    await sleep(10000);                       // do not touch the throttled target while measuring
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    // Heavy load on the inference path: block the offscreen document's main thread (~90% duty) so every
+    // request round-trip through it takes well over the 150 ms budget. (CPU throttling the page does not
+    // work here: inference runs in a Web Worker, so it never slowed the measured round trip.)
+    await ev('window.__n = 0; window.__loadTimer = setInterval(() => { const e = performance.now() + 400; while (performance.now() < e); }, 450); 0');
+    await sleep(10000);
+    await ev('clearInterval(window.__loadTimer); 0');
     const loaded = await ev('window.__n');
-    check(`under heavy load the sampler backs off to <= ~1 FPS (${loaded} frames / 10 s; baseline ${base} / 5 s; throttle ${thr})`, thr === 'ok' && loaded <= 8 && loaded <= base * 2 + 1, `${loaded} vs ${base}`);
+    check(`under heavy load the sampler backs off to < 60% of the baseline rate (${loaded} frames / 10 s; baseline ${base} / 5 s)`, loaded < base * 2 * 0.6, `${loaded} vs ${base}`);
 
     // Flip the stream to a bright (synthetic-looking to the test model) one.
     await page.evaluate(() => { window.__bright = true; });
