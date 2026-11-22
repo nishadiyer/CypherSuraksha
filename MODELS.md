@@ -99,6 +99,39 @@ An independent Python/PIL + ONNX Runtime run on the FP32 model gives the same nu
 - 640 ms per frame is far above the 150 ms budget, so the adaptive sampler settles at 0.5 FPS and the red circuit breaker needs roughly 7 frames (about 15 s) to trip.
 - INT8 on WASM only (see the NER note on WebGPU). Another model tried first, `Deep-Fake-Detector-v2` (Apache-2.0, 92% on its own test set), scored at chance here (AUC 0.48-0.51, same result in FP32 and under face crops) and was not adopted.
 
+## Installed: Pixel cloak (per-image adversarial face cloak)
+
+No pre-trained "cloak" model exists publicly (Fawkes, LowKey, Glaze and PhotoGuard all optimise each photo against a recogniser instead of shipping a one-pass model). So the Pixel shield does the same, on device, **with no training**:
+
+1. **Face detector**: UltraFace RFB-320 (MIT, 1.2 MB, `face-detector.ultraface.onnx`) finds up to 3 faces (at least 40 px).
+2. **Gradient graphs**: for each embedder, `scripts/cloak/export_gradient_onnx.py` exports `d cosine(embed(x), target) / dx` as a pure ONNX graph (traced with `torch.fx`, the four backward ops ONNX cannot express are rewritten exactly; checked against PyTorch, gradient cosine 0.99999 / 1.0). Embedders: `facenet-pytorch` InceptionResnetV1 `vggface2` and `casia-webface` (106 MB each, FP32).
+3. **PGD in the offscreen worker**: 30 steps of momentum PGD (L-infinity budget 8/255, step 2.5 eps / steps) against both embedders at once. Each step uses a **random crop scale (0.8-1.3x) and shift** and pulls the gradient back with the exact adjoint of the resize, so the cloak survives an attacker cropping differently (without this the effect collapsed: VGGFace2 went from 0% to 65% identification under a different crop). The perturbation is added only around each face, and the **total** change to any pixel (overlapping faces included) is clamped to the budget.
+4. A 20 s per-photo budget stops optimisation early and keeps what it has (`pgd-wasm-truncated`). Photos are processed one at a time. A photo with no face is only re-encoded (metadata stripped), reported as "No face found", and not counted as cloaked.
+
+Build the models with `npm run models:cloak` (creates `.venv-cloak`, needs Python 3.9+; about 213 MB into `public/models/`, git-ignored). If any are missing the shield falls back to the old paths (a feed-forward `pixel-cloak.fp16.onnx` if present, else bounded noise).
+
+| Component | Source | Licence |
+|---|---|---|
+| Face detector | https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB `version-RFB-320.onnx`, commit `0f9ca4a`, sha256 `34cd7e60...` | MIT |
+| FaceNet embedders | `facenet-pytorch` 2.6.0 pretrained `vggface2`, `casia-webface` (exported by us to gradient graphs) | Code MIT. **The weights were trained on VGGFace2 and CASIA-WebFace, whose own terms are research-oriented. Check them before any commercial redistribution.** |
+
+**Measured on the extension's real output** (`scripts/cloak/eval_extension.py` + `tests/e2e/cloakBench.mjs`): 40 LFW identities, one photo per person in an attacker's gallery (cloaked) and a clean photo of the same person as the probe, rank-1 identification; the attacker's crop is a fixed, well-aligned face box:
+
+| Recogniser | Clean | Cloaked | After JPEG q90 | After JPEG q75 |
+|---|---|---|---|---|
+| FaceNet VGGFace2 (in the ensemble) | 97.5% | **30.0%** | 32.5% | 32.5% |
+| FaceNet CASIA-WebFace (in the ensemble) | 97.5% | **27.5%** | 32.5% | 32.5% |
+| **ArcFace R50 (held out, never seen by the cloak)** | 97.5% | **95.0%** | 95.0% | 95.0% |
+
+Max change 8/255 per channel (about 3%). 40 photos had 64 faces; 6 of 40 hit the 20 s budget. For comparison, **plain random noise at +/-8/255 changed nothing** (97.5% on all three), which is what the old fallback does.
+
+**What this does and does not mean:**
+- It disrupts FaceNet-family recognisers and survives JPEG compression. **It does not stop ArcFace-family recognisers at this invisible budget** (95%, i.e. almost no effect). Earlier prototype runs with a larger budget bought only a little transfer: +/-12 gave ArcFace 85%, and +/-16 / +/-32 gave 87.5% / 52.5% (visible).
+- ArcFace R50 (InsightFace `w600k_r50`) is research-licensed and used for **evaluation only; it is not shipped**.
+- Small test: 40 identities, one gallery photo each, so each number has a wide margin (several points). LFW is pre-aligned. We did not test resizing, blurring or other cleaning defences, or recognisers retrained on cloaked images; published work shows cloaks of this kind can be defeated that way.
+- Cost: about 213 MB of models, 8-15 s per single-face photo on WASM (first photo about 17 s including model load), longer for groups, which hit the 20 s budget.
+- Claim to make: "disrupts FaceNet-class face recognition", not "defeats facial recognition".
+
 ## Getting weights with Microsoft Olive / Foundry
 
 Olive exports and quantizes; the commands below are the general pattern. Check Olive's docs for current flags and recipes.

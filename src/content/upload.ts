@@ -5,6 +5,9 @@ import { installUploadInterceptor } from './interceptors/uploadInterceptor';
 import { showCloakResult, showCloaking } from './ui/CloakBadge';
 import { showToast } from './ui/Toast';
 
+/** Files that went out re-encoded with nothing cloaked (no face found); the badge reports them honestly. */
+const noFace = new WeakSet<File>();
+
 installUploadInterceptor(window, {
   async cloak(file) {
     const buf = new Uint8Array(await file.arrayBuffer());
@@ -20,11 +23,14 @@ installUploadInterceptor(window, {
     const d = r.response.data as PixelsResult;
     const bytes = b64ToBytes(d.b64);
     const name = d.mime === file.type ? file.name : file.name.replace(/\.[^.]+$/, '') + (d.mime === 'image/png' ? '.png' : '.jpg');
-    return new File([bytes], name, { type: d.mime, lastModified: file.lastModified });
+    const out = new File([bytes], name, { type: d.mime, lastModified: file.lastModified });
+    if (d.mode === 'no-face') noFace.add(out);
+    return out;
   },
+  isNoFace: (f) => noFace.has(f),
   onProcessing: showCloaking,
-  onResult: (anchor, cloaked, failed) =>
-    showCloakResult(anchor, cloaked, failed, () => {
+  onResult: (anchor, cloaked, failed, none) =>
+    showCloakResult(anchor, cloaked, failed, none, () => {
       void send({ kind: 'BYPASS_SITE' }).then(() => showToast('Photos on this site will no longer be cloaked. Re-select your photo to upload the original.', 6000));
     }),
 });

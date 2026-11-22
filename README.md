@@ -5,7 +5,7 @@ A Chrome Manifest V3 extension that protects everyday users, students and famili
 | Pillar | What it does |
 |---|---|
 | **Privacy** | Intercepts prompts on ChatGPT, Claude, Gemini and Copilot, swaps names, emails, IDs and secrets for placeholders (`[PERSON_1]`) before they leave the page, and restores the real values on screen in the replies. |
-| **Pixels** | Intercepts image uploads (`<input type=file>` and drag-and-drop) on social sites, applies a bounded perturbation in memory, strips metadata, and hands the page the cloaked file. A badge offers "Bypass on this site". |
+| **Pixels** | Intercepts image uploads (`<input type=file>` and drag-and-drop) on social sites, finds faces, applies an invisible (max 8/255) adversarial perturbation in memory, strips metadata, and hands the page the cloaked file. A badge offers "Bypass on this site". |
 | **People** | Samples video during Google Meet, Zoom Web and WhatsApp Web calls at 0.5–2 FPS, scores each frame, smooths over 5 frames, and shows a green/yellow/red pill. Sustained red opens a warning modal. |
 
 ## Security invariants
@@ -61,7 +61,7 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## Models
 
-The extension works with no model files, using deterministic fallbacks. `npm run models` installs the real Privacy NER model. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
+The extension works with no model files, using deterministic fallbacks. `npm run models` installs the Privacy NER and People deepfake models; `npm run models:cloak` builds the Pixel cloak models. Drop quantized `.onnx` weights into `public/models/` to upgrade each shield. See [MODELS.md](MODELS.md) for file names, tensor shapes, configs, Olive/Foundry notes and the offline ("Airplane Mode") check.
 
 ## Supported sites
 
@@ -74,7 +74,7 @@ Video: Google Meet, Zoom (`*.zoom.us`), WhatsApp Web.
 ## Limits to know about
 
 - Site selectors for the prompt interceptors target the current DOM of each chat app. They are only tested against stand-in pages, and sites change their markup, so they may need updating.
-- Without a cloaking model, the Pixels fallback is bounded noise, **not** a learned adversarial cloak and gives no guarantee against any recognition system.
+- Pixels: with the cloak models installed (`npm run models:cloak`) each face is optimised against a FaceNet ensemble. In our test that cut FaceNet identification from 97.5% to about 30% and survived JPEG, but a different recogniser (ArcFace) was **barely affected** (95%), and it takes 8-15 s per photo (MODELS.md). Without the models the fallback is bounded noise, which our test showed has **no effect**, so treat it as metadata stripping only.
 - Without a deepfake model, the People shield shows an explicit yellow "Unverified" state rather than green. With the installed model (`npm run models`) it catches most AI-generated faces but **missed every face-swap in our 80-image test** (MODELS.md), and it is slow (about 0.6 s/frame), so a green pill does not mean the caller is real. Detectors are advisory and can be wrong either way.
 - Prompt redaction without an NER model catches structured data and name cues ("my name is …"), not arbitrary names. Run `npm run models` to install the real NER model (see MODELS.md); it is not committed because of its size.
 - JavaScript strings cannot be zeroed; "zero-fill" applies to the typed arrays and tensors that hold images, frames and tokens.

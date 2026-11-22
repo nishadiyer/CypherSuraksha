@@ -19,15 +19,20 @@ export function showCloaking(anchor: Anchor): void {
   show(anchor, <div class="rounded-full bg-slate-900 px-3 py-1.5 text-xs text-white shadow-lg font-sans">🛡️ Cloaking photo…</div>, 0);
 }
 
-export function showCloakResult(anchor: Anchor, cloaked: number, failed: number, onBypass: () => void): void {
+export function showCloakResult(anchor: Anchor, cloaked: number, failed: number, noFace: number, onBypass: () => void): void {
   const ok = failed === 0;
+  const text = !ok
+    ? `⚠️ ${failed} photo${failed > 1 ? 's' : ''} not uploaded`
+    : cloaked === 0 && noFace > 0
+      ? 'No face found — location data removed'
+      : `🛡️ Cloaked${cloaked > 1 ? ` (${cloaked})` : ''}${noFace > 0 ? `, ${noFace} had no face` : ''}`;
   show(
     anchor,
     <div
       role="status"
       class={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-white shadow-lg font-sans ${ok ? 'bg-emerald-700' : 'bg-amber-700'}`}
     >
-      <span>{ok ? `🛡️ Cloaked${cloaked > 1 ? ` (${cloaked})` : ''}` : `⚠️ ${failed} photo${failed > 1 ? 's' : ''} not uploaded`}</span>
+      <span>{text}</span>
       <button class="underline underline-offset-2 hover:no-underline" onClick={() => { onBypass(); current?.destroy(); }}>
         Bypass on this site
       </button>

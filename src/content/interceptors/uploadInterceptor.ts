@@ -2,7 +2,9 @@ export interface UploadDeps {
   /** Resolve to the cloaked file; reject/return null when it could not be cloaked. */
   cloak(file: File): Promise<File | null>;
   onProcessing(anchor: Anchor): void;
-  onResult(anchor: Anchor, cloaked: number, failed: number): void;
+  /** True when the returned file went out re-encoded but with nothing to cloak (no face found). */
+  isNoFace?(file: File): boolean;
+  onResult(anchor: Anchor, cloaked: number, failed: number, noFace: number): void;
 }
 
 export interface Anchor {
@@ -17,9 +19,10 @@ function anchorForInput(input: HTMLInputElement): Anchor {
   return r.width > 0 && r.height > 0 ? { x: r.left, y: r.bottom + 4 } : { x: 16, y: Math.max(16, innerHeight - 64) };
 }
 
-async function cloakAll(files: File[], deps: UploadDeps): Promise<{ out: File[]; cloaked: number; failed: number }> {
+async function cloakAll(files: File[], deps: UploadDeps): Promise<{ out: File[]; cloaked: number; failed: number; noFace: number }> {
   let cloaked = 0;
   let failed = 0;
+  let noFace = 0;
   const out: File[] = [];
   const results = await Promise.all(
     files.map(async (f) => {
@@ -35,10 +38,13 @@ async function cloakAll(files: File[], deps: UploadDeps): Promise<{ out: File[];
     if (!r) failed++; // fail closed: an image that could not be cloaked is not forwarded
     else {
       out.push(r);
-      if (isImage(files[i]!)) cloaked++;
+      if (isImage(files[i]!)) {
+        if (deps.isNoFace?.(r)) noFace++;
+        else cloaked++;
+      }
     }
   });
-  return { out, cloaked, failed };
+  return { out, cloaked, failed, noFace };
 }
 
 /**
@@ -69,12 +75,12 @@ export function installUploadInterceptor(win: Window, deps: UploadDeps): () => v
     pending.add(input);
     const anchor = anchorForInput(input);
     deps.onProcessing(anchor);
-    void cloakAll(files, deps).then(({ out, cloaked, failed }) => {
+    void cloakAll(files, deps).then(({ out, cloaked, failed, noFace }) => {
       pending.delete(input);
       const dt = new DataTransfer();
       out.forEach((f) => dt.items.add(f));
       input.files = dt.files;
-      deps.onResult(anchor, cloaked, failed);
+      deps.onResult(anchor, cloaked, failed, noFace);
       if (out.length === 0) return; // nothing safe to forward
       redispatch(() => {
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -92,8 +98,8 @@ export function installUploadInterceptor(win: Window, deps: UploadDeps): () => v
     const target = e.target;
     const anchor = { x: e.clientX, y: e.clientY };
     deps.onProcessing(anchor);
-    void cloakAll(files, deps).then(({ out, cloaked, failed }) => {
-      deps.onResult(anchor, cloaked, failed);
+    void cloakAll(files, deps).then(({ out, cloaked, failed, noFace }) => {
+      deps.onResult(anchor, cloaked, failed, noFace);
       if (out.length === 0 || !(target instanceof EventTarget)) return;
       const dt = new DataTransfer();
       out.forEach((f) => dt.items.add(f));

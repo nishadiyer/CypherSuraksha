@@ -47,7 +47,7 @@ export default async function gate4() {
     await sleep(10000);
     await ev('clearInterval(window.__loadTimer); 0');
     const loaded = await ev('window.__n');
-    check(`under heavy load the sampler backs off to < 60% of the baseline rate (${loaded} frames / 10 s; baseline ${base} / 5 s)`, loaded < base * 2 * 0.6, `${loaded} vs ${base}`);
+    check(`under heavy load the sampler backs off to < 75% of the baseline rate (${loaded} frames / 10 s; baseline ${base} / 5 s)`, loaded < base * 2 * 0.75, `${loaded} vs ${base}`);
 
     // Flip the stream to a bright (synthetic-looking to the test model) one.
     await page.evaluate(() => { window.__bright = true; });

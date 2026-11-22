@@ -7,6 +7,8 @@ import { getMap, mergeMap } from './sessionStore';
 
 const SHIELDS: ReadonlySet<string> = new Set<ShieldKind>(['PRIVACY', 'PIXELS', 'PEOPLE']);
 const INFER_TIMEOUT_MS = 30_000;
+/** Cloaking optimises each face (seconds) and photos queue, so it gets a much longer ceiling. */
+const TIMEOUTS: Partial<Record<ShieldKind, number>> = { PIXELS: 180_000 };
 const callsCounted = new Set<number>();
 
 const allow = (requestId: string): ShieldResponse => ({ requestId, action: 'ALLOW', confidence: 0, latencyMs: 0 });
@@ -52,7 +54,7 @@ async function runShield(req: ShieldRequest): Promise<ShieldResponse> {
     };
   }
   await ensureOffscreen();
-  const res = (await withTimeout(sendToOffscreen(req), INFER_TIMEOUT_MS)) as ShieldResponse | undefined;
+  const res = (await withTimeout(sendToOffscreen(req), TIMEOUTS[req.shield] ?? INFER_TIMEOUT_MS)) as ShieldResponse | undefined;
   if (!res || res.requestId !== req.requestId) throw new Error('offscreen returned no response');
 
   if (req.shield === 'PRIVACY' && res.action === 'MODIFY') {
@@ -61,7 +63,8 @@ async function runShield(req: ShieldRequest): Promise<ShieldResponse> {
     await mergeMap(req.tabId, r.map);
     void bump('promptsRedacted');
   } else if (req.shield === 'PIXELS' && res.action === 'MODIFY') {
-    void bump('photosCloaked');
+    // Re-encoded-only photos (no face found) are not counted as cloaked.
+    if ((res.data as { mode?: string } | undefined)?.mode !== 'no-face') void bump('photosCloaked');
   }
   return res;
 }

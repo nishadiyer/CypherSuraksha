@@ -58,6 +58,10 @@ export interface PixelsPayload {
 export interface PixelsResult {
   b64: string;
   mime: string;
+  /** how the photo was protected: pgd-wasm, no-face, onnx-*, deterministic-noise */
+  mode?: string;
+  /** faces cloaked (PGD mode) */
+  faces?: number;
 }
 
 /* ---------- People ---------- */

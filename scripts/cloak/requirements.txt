@@ -1,0 +1,10 @@
+# Dev-time only: used to export the gradient graphs. The extension itself never runs Python.
+torch==2.8.0
+torchvision==0.23.0
+onnx==1.19.1
+onnxscript==0.7.2
+onnxruntime==1.19.2
+numpy==2.0.2
+pillow==11.3.0
+requests==2.32.5
+tqdm==4.70.1

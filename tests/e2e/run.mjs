@@ -6,11 +6,12 @@ import gate4 from './gate4.mjs';
 import gate5 from './gate5.mjs';
 import gate6 from './gate6.mjs';
 import gateNer from './gateNer.mjs';
+import gateCloak from './gateCloak.mjs';
 import gateOnnx from './gateOnnx.mjs';
 import gatePeople from './gatePeople.mjs';
 
 // Hard stop so a hung browser can never stall a run again.
-setTimeout(() => { console.error('e2e watchdog: exceeded time limit'); process.exit(2); }, Number(process.env.E2E_TIMEOUT_MS ?? 240000)).unref();
+setTimeout(() => { console.error('e2e watchdog: exceeded time limit'); process.exit(2); }, Number(process.env.E2E_TIMEOUT_MS ?? 1800000)).unref();
 
 const only = process.argv[2];
 // Gates must be hermetic: public/models may hold real weights, so start from an empty dist/models.
@@ -18,6 +19,7 @@ rmSync(`${DIST}/models`, { recursive: true, force: true });
 const gates = { 12: gate12, 3: gate3, 5: gate5, 6: gate6 };
 if (only === 'onnx') await gateOnnx();
 else if (only === 'ner') await gateNer();
+else if (only === 'cloak') await gateCloak();
 else if (only === 'people') await gatePeople();
 else if (only === '4') await gate4();
 else {
@@ -30,6 +32,7 @@ else {
   if (!only) {
     await gateOnnx();
     await gateNer();
+    await gateCloak();
     await gatePeople();
     await gate4();
   }

@@ -2,18 +2,21 @@
 // Dev-time only: the extension itself never touches the network.
 // Sources (see MODELS.md for licences and measurements):
 //  - Privacy NER: https://huggingface.co/Xenova/bert-base-NER (INT8 export of dslim/bert-base-NER), MIT.
+//  - Face detector (cloak): https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB (UltraFace RFB-320), MIT.
 //  - People deepfake: https://huggingface.co/buildborderless/CommunityForensics-DeepfakeDet-ViT (corrected INT8 ONNX of a ViT-Small trained on 4,803 generators), MIT.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const REV = '8e892123e8b7c2c0c2bd1dcb598b7d244c4e53aa';
 const NER_BASE = `https://huggingface.co/Xenova/bert-base-NER/resolve/${REV}`;
+const FD_BASE = 'https://raw.githubusercontent.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB/0f9ca4a9fc80170fd505168fd1132b837141f7df';
 const DF_BASE = 'https://huggingface.co/buildborderless/CommunityForensics-DeepfakeDet-ViT/resolve/ac6ee457bea904a373065754107451793b56db00';
 const OUT = new URL('../public/models/', import.meta.url).pathname;
 const FILES = [
   { base: NER_BASE, src: 'onnx/model_quantized.onnx', dst: 'privacy-ner.int8.onnx', sha256: 'caaee70a5518ec7f9e46e5308fcc9263a8c227703a9ce46cf61c69a552349648' },
   { base: NER_BASE, src: 'vocab.txt', dst: 'privacy-ner.vocab.txt', sha256: 'eeaa9875b23b04b4c54ef759d03db9d1ba1554838f8fb26c5d96fa551df93d02' },
   { base: DF_BASE, src: 'onnx/model_int8.onnx', dst: 'people-deepfake.int8.onnx', sha256: '968f113f1107d58bfc73444b6e87020e2d541780ad43b7a1ac3e3b18b86c2bbd' },
+  { base: FD_BASE, src: 'models/onnx/version-RFB-320.onnx', dst: 'face-detector.ultraface.onnx', sha256: '34cd7e60aeff28744c657de7a3dc64e872d506741de66987f3426f2b79f88017' },
 ];
 const CONFIG = { id2label: { 0: 'O', 1: 'B-MISC', 2: 'I-MISC', 3: 'B-PER', 4: 'I-PER', 5: 'B-ORG', 6: 'I-ORG', 7: 'B-LOC', 8: 'I-LOC' }, doLowerCase: false, maxLength: 512, minConfidence: 0.6 };
 
