@@ -38,6 +38,26 @@ function Row({ ok, children }: { ok: boolean | 'info'; children: preact.Componen
   );
 }
 
+function Candidates({ json }: { json: string }) {
+  let list: Array<{ el: string; role?: string; testid?: string; aria?: string; editable?: string; inShadow: boolean; w: number; h: number }> = [];
+  try {
+    list = JSON.parse(json);
+  } catch {
+    list = [];
+  }
+  return (
+    <li class="ml-4 text-[10px] text-slate-500" data-testid="candidates">
+      Text boxes seen on this page (send a screenshot of this):
+      {list.length === 0 && <div>none found</div>}
+      {list.map((c, i) => (
+        <div key={i} class="font-mono">
+          {c.el} {c.editable !== undefined && `[contenteditable=${c.editable}]`} {c.role && `role=${c.role}`} {c.testid && `testid=${c.testid}`} {c.aria && `aria="${c.aria}"`} {c.inShadow && 'IN-SHADOW-DOM'} {c.w}x{c.h}
+        </div>
+      ))}
+    </li>
+  );
+}
+
 function ThisPage({ page }: { page: PageState }) {
   if (page.kind === 'loading') return <p class="text-xs text-slate-400">Checking this tab…</p>;
   if (page.kind === 'other') return <p class="text-xs text-slate-500">AI Shield does not apply to this page. It works on the supported chat, upload and video-call sites.</p>;
@@ -55,6 +75,7 @@ function ThisPage({ page }: { page: PageState }) {
           return [
             <Row ok key="p">AI chat detected ({String(d.site)}): AI Shield is running on this tab</Row>,
             <Row ok={Boolean(d.messageBox)} key="m">Message box: {d.messageBox ? 'found' : 'NOT found. This site may have changed its page, tell the developer'}</Row>,
+            d.messageBox || !d.candidates ? null : <Candidates key="c" json={String(d.candidates)} />,
             <Row ok={d.sendButton ? true : 'info'} key="s">Send button: {d.sendButton ? 'found' : 'not on the page yet (many sites only show it after you type)'}</Row>,
           ];
         if (p.part === 'upload') return <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page)</Row>;

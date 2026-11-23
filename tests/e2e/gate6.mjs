@@ -55,4 +55,21 @@ export default async function gate6({ browser, sw }) {
   check('popup "This page" says AI Shield is running and found the message box', /AI chat detected \(chatgpt\.com\)/.test(txt) && /Message box: found/.test(txt) && /Send button: found/.test(txt), txt.slice(0, 300));
   await pop.close();
   await page.close();
+
+  // A site whose message box no longer matches the selector: the panel must say so and show what it did see.
+  const { page: odd } = await fakeSite(browser, 'claude.ai', '<!doctype html><body><div id="new-editor" contenteditable="true" style="width:600px;height:50px;border:1px solid #888"></div></body>');
+  await sleep(1500); // let the new page's content script register
+  const oddInfo = await sw.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ url: 'https://claude.ai/*' });
+    return { tab: tab.id, status: await chrome.tabs.sendMessage(tab.id, { kind: 'PAGE_STATUS' }) };
+  });
+  const d = oddInfo.status?.parts?.find((p) => p.part === 'prompt')?.detail;
+  check('page status: a message box the selector misses is reported as not found, with candidates', d?.messageBox === false && /div#new-editor/.test(String(d?.candidates)), JSON.stringify(d));
+  const pop2 = await browser.newPage();
+  await pop2.goto(`chrome-extension://${info.id}/src/popup/index.html?tabId=${oddInfo.tab}`);
+  await pop2.waitForSelector('[data-testid=candidates]', { timeout: 8000 }).catch(() => null);
+  const txt2 = await pop2.evaluate(() => document.body.innerText);
+  check('popup shows "NOT found" and lists the text box it saw', /Message box: NOT found/.test(txt2) && /div#new-editor/.test(txt2), txt2.slice(0, 400));
+  await pop2.close();
+  await odd.close();
 }

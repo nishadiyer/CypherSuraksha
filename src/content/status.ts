@@ -27,3 +27,51 @@ export function registerPageStatus(part: string, probe: Probe): void {
     return false;
   });
 }
+
+/* ---------- diagnostics: what on this page looks like a message box? (attributes only, never text) ---------- */
+
+export interface EditableCandidate {
+  el: string; // e.g. div#prompt-textarea
+  role?: string;
+  testid?: string;
+  aria?: string;
+  editable?: string;
+  inShadow: boolean;
+  w: number;
+  h: number;
+}
+
+const EDITABLE = 'textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], input[type="text"], input[type="search"], input:not([type])';
+
+/** Walks the document, going into open shadow roots, and returns elements matching `selector`. */
+function* deepQuery(root: ParentNode, selector: string, inShadow = false): Generator<{ el: Element; inShadow: boolean }> {
+  for (const el of root.querySelectorAll(selector)) yield { el, inShadow };
+  for (const host of root.querySelectorAll('*')) {
+    if (host.shadowRoot) yield* deepQuery(host.shadowRoot, selector, true);
+  }
+}
+
+/** Largest visible editable elements. Reports attributes only: never value, text content or placeholder. */
+export function editableCandidates(doc: Document, limit = 5): EditableCandidate[] {
+  const out: Array<EditableCandidate & { area: number }> = [];
+  for (const { el, inShadow } of deepQuery(doc, EDITABLE)) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 20 || r.height < 12 || !el.getClientRects().length) continue;
+    const id = el.id ? `#${el.id.slice(0, 40)}` : '';
+    out.push({
+      el: `${el.tagName.toLowerCase()}${id}`,
+      role: el.getAttribute('role') ?? undefined,
+      testid: el.getAttribute('data-testid') ?? undefined,
+      aria: el.getAttribute('aria-label')?.slice(0, 40) ?? undefined,
+      editable: el.getAttribute('contenteditable') ?? undefined,
+      inShadow,
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      area: r.width * r.height,
+    });
+  }
+  return out
+    .sort((a, b) => b.area - a.area)
+    .slice(0, limit)
+    .map(({ area: _a, ...c }) => c);
+}
