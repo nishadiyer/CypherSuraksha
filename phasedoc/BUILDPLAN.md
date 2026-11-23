@@ -144,7 +144,7 @@
 ### P5.1 Real sites
     - [x] **P5.1.1** ChatGPT live interception
       - _acceptance:_ on chatgpt.com a prompt with a name+email is sent with placeholders and the toast shows
-      - _note:_ 2026-11-23 live: user still sees placeholders in ChatGPT after the split-node fix. Leading hypothesis (not proven): the reply is rendered in ChatGPT's canvas ('Start writing' contenteditable editor); the restorer deliberately never edits editable regions (it would look like a user edit and could be saved with real data). Added popup counters (placeholders remembered / still showing / inside editable areas) to confirm.
+      - _note:_ 2026-11-23 CONFIRMED by the user on live ChatGPT: the unrestored placeholders were in ChatGPT's canvas (editable document editor), which the restorer deliberately never edits. Not a bug; documented in README Limits. Reply restoration in the normal chat (non-canvas) not separately re-confirmed live.
     - [x] **P5.1.2** Claude live interception
       - _acceptance:_ same check on claude.ai
       - _note:_ 2026-11-23 LIVE PASS on real claude.ai in the user's Chrome (reported by the user, not machine-verified): popup status showed AI Shield running, message box + send button found with the shipped selectors; the fake name/email/phone prompt was redacted, toast shown, placeholders in the history after reload. No code change was needed for Claude.
