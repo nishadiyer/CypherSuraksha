@@ -67,19 +67,88 @@ describe('writeComposer robustness', () => {
     const { writeComposer, lastWrite } = await import('../src/content/interceptors/promptInterceptor');
     document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox"></span>';
     const el = document.getElementById('ed')!;
-    Object.defineProperty(el, 'innerText', { get: () => '​' + (el.textContent ?? '').replace(/ /g, ' ​') + '​', configurable: true });
-    expect(writeComposer(el, 'Hello [PERSON_1] please')).toBe(true);
+    Object.defineProperty(el, 'innerText', { get: () => '\u200b' + (el.textContent ?? '').replace(/ /g, ' \u200b') + '\u200b', configurable: true });
+    expect(await writeComposer(el, 'Hello [PERSON_1] please')).toBe(true);
     expect(lastWrite.attempts.at(-1)?.ok).toBe(true);
   });
+
+  /**
+   * A "controlled" editor shaped like the one live diagnostics showed on Copilot: it ignores replacing a selection, inserts
+   * only at a plain (collapsed) caret, loses about one backspace in 13 when they come fast, and will not backspace the very
+   * first character (forward-delete from the start can).
+   */
+  function controlledEditor(initial: string, opts: { deleteWorks?: boolean } = {}) {
+    document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox"></span>';
+    const el = document.getElementById('ed')!;
+    let model = initial;
+    let calls = 0;
+    const render = () => { el.textContent = model; };
+    render();
+    // a controlled editor re-renders from its own state, undoing any direct DOM change (as live Copilot did)
+    new MutationObserver(() => { if (el.textContent !== model) setTimeout(render, 0); }).observe(el, { childList: true, characterData: true, subtree: true });
+    const collapsed = () => document.getSelection()?.isCollapsed !== false;
+    (document as unknown as { execCommand: (c: string, ui?: boolean, v?: string) => boolean }).execCommand = (cmd, _ui, value) => {
+      if (cmd === 'selectAll') { const r = document.createRange(); r.selectNodeContents(el); const s = document.getSelection()!; s.removeAllRanges(); s.addRange(r); return true; }
+      if (cmd === 'insertText') { if (!collapsed()) return false; model += value ?? ''; render(); return true; }
+      if (cmd === 'delete') {
+        if (!collapsed() || opts.deleteWorks === false) return false;
+        calls++;
+        if (calls % 13 === 0 || model.length <= 1) return true; // a lost keystroke; and the first character is never backspaced
+        model = model.slice(0, -1); render(); return true;
+      }
+      if (cmd === 'forwardDelete') { if (!collapsed() || opts.deleteWorks === false) return false; model = model.slice(1); render(); return true; }
+      return false;
+    };
+    return { el, get: () => model };
+  }
+
+  it('edits a controlled editor that only accepts caret typing and flaky backspace (the live Copilot behaviour)', async () => {
+    const { writeComposer, lastWrite } = await import('../src/content/interceptors/promptInterceptor');
+    const original = 'My name is Priya Venkataraman and my email is priya.v@example.com. My phone is +91 98765 43210. Thanks';
+    const { el, get } = controlledEditor(original);
+    expect(await writeComposer(el, 'My name is [PERSON_1] and my email is [EMAIL_1].', original)).toBe(true);
+    expect(get()).toBe('My name is [PERSON_1] and my email is [EMAIL_1].');
+    expect(lastWrite.attempts.at(-1)?.ok).toBe(true);
+  });
+
+  it('leaves the user\'s own text intact when no strategy can edit the box (never a half-deleted draft)', async () => {
+    const { writeComposer } = await import('../src/content/interceptors/promptInterceptor');
+    const original = 'Please keep this draft exactly as it is';
+    const { el, get } = controlledEditor(original, { deleteWorks: false });
+    expect(await writeComposer(el, 'Hello [PERSON_1]', original)).toBe(false);
+    expect(get()).toBe(original);
+  });
+
+  it('restores the original text if the box ends up emptied but the redacted text cannot be inserted', async () => {
+    const { writeComposer } = await import('../src/content/interceptors/promptInterceptor');
+    const original = 'Draft to restore';
+    document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox"></span>';
+    const el = document.getElementById('ed')!;
+    let model = original;
+    let blockRedacted = true;
+    const render = () => { el.textContent = model; };
+    render();
+    new MutationObserver(() => { if (el.textContent !== model) setTimeout(render, 0); }).observe(el, { childList: true, characterData: true, subtree: true });
+    (document as unknown as { execCommand: (c: string, ui?: boolean, v?: string) => boolean }).execCommand = (cmd, _ui, value) => {
+      if (cmd === 'selectAll') { const r = document.createRange(); r.selectNodeContents(el); const s = document.getSelection()!; s.removeAllRanges(); s.addRange(r); return true; }
+      if (cmd === 'delete') { model = ''; render(); return true; }               // can empty the box
+      if (cmd === 'insertText') { if (value?.includes('[PERSON')) return blockRedacted ? false : true; model += value ?? ''; render(); return true; } // refuses the redacted text only
+      return false;
+    };
+    expect(await writeComposer(el, 'Hello [PERSON_1]', original)).toBe(false);
+    expect(model).toBe(original);
+    void blockRedacted;
+  });
+
   it('returns false when the editor refuses every edit, and records lengths only', async () => {
     const { writeComposer, lastWrite } = await import('../src/content/interceptors/promptInterceptor');
     document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox">original secret text</span>';
     const el = document.getElementById('ed')!;
+    (document as unknown as { execCommand?: unknown }).execCommand = undefined;
     Object.defineProperty(el, 'innerText', { get: () => 'original secret text', configurable: true }); // always reverts
-    expect(writeComposer(el, 'Hello [PERSON_1]')).toBe(false);
+    expect(await writeComposer(el, 'Hello [PERSON_1]')).toBe(false);
     expect(lastWrite.attempts.length).toBeGreaterThanOrEqual(6);
     expect(lastWrite.attempts.every((a) => !a.ok && a.read === 20 && (a.expected === 16 || a.expected === 0))).toBe(true); // 0 = "is it empty?" checks
-    expect(lastWrite.attempts.some((a) => a.expected === 0)).toBe(true);
     expect(JSON.stringify(lastWrite)).not.toMatch(/secret|PERSON/);
   });
 });

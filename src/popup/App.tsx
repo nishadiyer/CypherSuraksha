@@ -79,7 +79,7 @@ function Buttons({ json }: { json: string }) {
 }
 
 function WriteDiag({ json }: { json: string }) {
-  let d: { tag: string; editable: boolean; attempts: Array<{ strategy: string; read: number; expected: number; ok: boolean }> } = { tag: '', editable: false, attempts: [] };
+  let d: { tag: string; editable: boolean; attempts: Array<{ strategy: string; read: number; expected: number; ok: boolean; left?: string }> } = { tag: '', editable: false, attempts: [] };
   try {
     d = JSON.parse(json);
   } catch {
@@ -90,7 +90,7 @@ function WriteDiag({ json }: { json: string }) {
       The last attempt to edit the message box failed (send a screenshot of this). Box: {d.tag}{d.editable ? ' (editable)' : ''}
       {d.attempts.map((a, i) => (
         <div key={i} class="font-mono">
-          {a.strategy}: box then held {a.read} characters, expected {a.expected} {a.ok ? '(ok)' : '(no)'}
+          {a.strategy}: box then held {a.read} characters, expected {a.expected} {a.ok ? '(ok)' : '(no)'}{a.left ? ` left: ${a.left}` : ''}
         </div>
       ))}
     </li>

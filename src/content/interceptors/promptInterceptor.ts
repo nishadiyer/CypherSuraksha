@@ -83,21 +83,53 @@ export interface WriteAttempt {
   read: number;
   expected: number;
   ok: boolean;
+  /** when a few characters are left in a box that should be empty: what KIND they are (never the characters) */
+  left?: string;
 }
 export const lastWrite: { tag: string; editable: boolean; attempts: WriteAttempt[] } = { tag: '', editable: false, attempts: [] };
 
+/** Describes up to 3 leftover characters without revealing them (printable ones are reported only as a class). */
+function describeLeftover(raw: string): string {
+  return [...raw]
+    .slice(0, 3)
+    .map((c) => {
+      const cp = c.codePointAt(0) ?? 0;
+      if (/\s/u.test(c)) return 'whitespace';
+      if (/[\p{Cc}\p{Cf}]/u.test(c)) return `invisible U+${cp.toString(16).toUpperCase().padStart(4, '0')}`;
+      if (/[\p{L}\p{N}]/u.test(c)) return 'letter-or-digit';
+      return 'symbol';
+    })
+    .join(',');
+}
+
+function caretToStart(el: HTMLElement): void {
+  el.focus();
+  const sel = el.ownerDocument.defaultView?.getSelection();
+  if (!sel) return;
+  const range = el.ownerDocument.createRange();
+  range.selectNodeContents(el);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 /**
- * Replaces the composer text and returns true only if the editor now holds it.
- * Strategies, in order: native setter (textarea), execCommand insertText (goes
- * through ProseMirror/Lexical/Quill beforeinput handling), a synthetic paste,
- * then textContent plus a synthetic InputEvent so frameworks re-read the DOM.
+ * Replaces the composer text and resolves true only if the editor now holds it. Never leaves a half-edited box: if no
+ * strategy works and `restore` (the user's original text) is given, it is put back.
+ *
+ * Strategies, in order: native setter (textarea); execCommand insertText over a selection (goes through
+ * ProseMirror/Lexical/Quill beforeinput handling); then, for "controlled" editors that ignore a programmatic
+ * select-and-replace but accept what a user does at a plain caret, EMPTY the box first (select-all + delete, backspace in
+ * small batches with pauses so the editor keeps up, forward-delete, keyboard events) and only insert once it is verified
+ * empty; finally a synthetic paste and textContent.
  */
-export function writeComposer(el: HTMLElement, text: string): boolean {
+export async function writeComposer(el: HTMLElement, text: string, restore?: string): Promise<boolean> {
   const doc = el.ownerDocument;
   lastWrite.tag = el.tagName.toLowerCase();
   lastWrite.editable = el.isContentEditable;
   lastWrite.attempts = [];
-  const check = (strategy: string): boolean => {
+  const check = async (strategy: string, settle = 40): Promise<boolean> => {
+    await sleep(settle); // let an editor that re-renders from its own state do so before we judge
     const read = norm(readComposer(el));
     const ok = read === norm(text);
     lastWrite.attempts.push({ strategy, read: read.length, expected: norm(text).length, ok });
@@ -108,64 +140,74 @@ export function writeComposer(el: HTMLElement, text: string): boolean {
     // Native setter so React-controlled inputs notice the change.
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(el, text);
     el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-    return check('textarea-setter');
+    return check('textarea-setter', 0);
   }
-  try {
-    selectAll(el);
-    doc.execCommand('insertText', false, text);
-  } catch {
-    /* fall through */
-  }
-  if (check('execCommand-selectAll')) return true;
-  try {
-    selectContents(el);
-    doc.execCommand('insertText', false, text);
-  } catch {
-    /* fall through */
-  }
-  if (check('execCommand-range')) return true;
-  // Controlled editors (Copilot, Slate, some Lexical setups) keep their own copy of the text and ignore a programmatic
-  // select-and-replace, but accept what a user does at a plain caret: backspace, then type. So: empty the box first and
-  // only insert once it is verified empty (a failed attempt must not leave old + new text appended together).
-  const empty = (strategy: string): boolean => {
-    const read = norm(readComposer(el));
-    lastWrite.attempts.push({ strategy, read: read.length, expected: 0, ok: read === '' });
-    return read === '';
-  };
-  const insertWhenEmpty = (name: string): boolean => {
+  const exec = (cmd: string, value?: string): void => {
     try {
-      doc.execCommand('insertText', false, text);
+      doc.execCommand(cmd, false, value);
     } catch {
-      /* fall through */
+      /* ignore */
     }
-    return check(name);
   };
-  try {
+  const len = (): number => norm(readComposer(el)).length;
+  const isEmpty = async (strategy: string, settle = 40): Promise<boolean> => {
+    await sleep(settle);
+    const raw = norm(readComposer(el));
+    lastWrite.attempts.push({ strategy, read: raw.length, expected: 0, ok: raw === '', left: raw && raw.length <= 3 ? describeLeftover(raw) : undefined });
+    return raw === '';
+  };
+
+  // 1) replace over a selection
+  selectAll(el);
+  exec('insertText', text);
+  if (await check('execCommand-selectAll')) return true;
+  selectContents(el);
+  exec('insertText', text);
+  if (await check('execCommand-range')) return true;
+
+  // 2) empty first, then insert at the caret
+  const emptied = async (): Promise<boolean> => {
     selectAll(el);
-    doc.execCommand('delete', false);
-  } catch {
-    /* fall through */
-  }
-  if (empty('selectAll-delete') && insertWhenEmpty('selectAll-delete-insert')) return true;
-  try {
+    exec('delete');
+    if (await isEmpty('selectAll-delete')) return true;
+    // backspace in small batches so an editor that processes input asynchronously keeps up
     caretToEnd(el);
-    for (let i = 0, n = readComposer(el).length + 8; i < n && norm(readComposer(el)) !== ''; i++) doc.execCommand('delete', false);
-  } catch {
-    /* fall through */
+    let prev = len();
+    let stalled = 0;
+    for (let batch = 0; batch < 60 && len() > 0; batch++) {
+      for (let i = 0; i < 12; i++) exec('delete');
+      await sleep(25);
+      const now = len();
+      stalled = now >= prev ? stalled + 1 : 0;
+      if (stalled >= 4) break;
+      prev = now;
+      caretToEnd(el);
+    }
+    if (await isEmpty('caret-backspace-batches')) return true;
+    // a leftover (often at the start): forward-delete from the start
+    caretToStart(el);
+    for (let i = 0; i < len() + 4 && len() > 0; i++) exec('forwardDelete');
+    if (await isEmpty('caret-forward-delete')) return true;
+    try {
+      el.focus();
+      const key = (k: string, mods: KeyboardEventInit = {}): void => {
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k, bubbles: true, cancelable: true, ...mods }));
+      };
+      key('a', { ctrlKey: true });
+      key('a', { metaKey: true });
+      key('Backspace');
+    } catch {
+      /* ignore */
+    }
+    return isEmpty('keyboard-select-all-backspace');
+  };
+  if (await emptied()) {
+    caretToEnd(el);
+    exec('insertText', text);
+    if (await check('insert-after-empty', 80)) return true;
   }
-  if (empty('caret-backspace-all') && insertWhenEmpty('caret-backspace-insert')) return true;
-  try {
-    el.focus();
-    const key = (k: string, mods: KeyboardEventInit = {}): void => {
-      el.dispatchEvent(new KeyboardEvent('keydown', { key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k, bubbles: true, cancelable: true, ...mods }));
-    };
-    key('a', { ctrlKey: true });
-    key('a', { metaKey: true });
-    key('Backspace');
-  } catch {
-    /* fall through */
-  }
-  if (empty('keyboard-select-all-backspace') && insertWhenEmpty('keyboard-insert')) return true;
+
+  // 3) last resorts
   try {
     selectAll(el);
     const dt = new DataTransfer();
@@ -174,10 +216,21 @@ export function writeComposer(el: HTMLElement, text: string): boolean {
   } catch {
     /* DataTransfer unavailable */
   }
-  if (check('paste')) return true;
+  if (await check('paste')) return true;
   el.textContent = text;
   el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-  return check('textContent');
+  if (await check('textContent')) return true;
+
+  // Nothing worked: do not leave the user's draft destroyed. Put the original back (best effort).
+  if (restore !== undefined && norm(readComposer(el)) !== norm(restore)) {
+    if (len() === 0 || (await emptied())) {
+      caretToEnd(el);
+      exec('insertText', restore);
+      await sleep(80);
+      lastWrite.attempts.push({ strategy: 'restore-original', read: norm(readComposer(el)).length, expected: norm(restore).length, ok: norm(readComposer(el)) === norm(restore) });
+    }
+  }
+  return false;
 }
 
 /** Real chat apps keep a hidden fallback textarea beside the visible editor: pick the live one. */
@@ -230,7 +283,7 @@ export function installPromptInterceptor(win: Window, adapter: SiteAdapter, deps
         try {
           const out = await deps.redact(original);
           if (out.redactedText !== undefined && out.count > 0) {
-            if (!writeComposer(composer, out.redactedText)) {
+            if (!(await writeComposer(composer, out.redactedText, original))) {
               // The editor refused the swap: never send the original.
               deps.onError('AI Shield could not edit this prompt box, so nothing was sent. Remove the sensitive text and try again.');
               return;
