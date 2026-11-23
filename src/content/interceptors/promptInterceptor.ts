@@ -16,7 +16,7 @@ const ADAPTERS: Array<[RegExp, SiteAdapter]> = [
   }],
   [/(^|\.)claude\.ai$/, { composer: 'div[contenteditable="true"].ProseMirror', send: 'button[aria-label^="Send"]' }],
   [/(^|\.)gemini\.google\.com$/, { composer: 'rich-textarea .ql-editor, div.ql-editor[contenteditable="true"]', send: 'button.send-button, button[aria-label*="Send"]' }],
-  [/(^|\.)copilot\.microsoft\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
+  [/(^|\.)copilot\.microsoft\.com$|(^|\.)copilot\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
 ];
 
 export function adapterFor(hostname: string): SiteAdapter | null {
@@ -240,21 +240,68 @@ export function installRestorer(doc: Document, initial: EntityMap = {}): Restore
     return !!el && (el.isContentEditable || !!el.closest('textarea, [contenteditable="true"], script, style'));
   };
 
+  /** The block of text a placeholder can be split across (streaming UIs wrap tokens in many small nodes). */
+  const scopeOf = (n: Node): Element | null => n.parentElement?.closest('p, li, h1, h2, h3, h4, h5, h6, td, th, blockquote, pre, dd, dt') ?? n.parentElement;
+
+  /** Restores every placeholder in `scope`, including ones split across adjacent text nodes. */
+  const restoreScope = (scope: Element): void => {
+    if (!re) return;
+    const nodes: Text[] = [];
+    const w = doc.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) if (!inEditable(n)) nodes.push(n as Text);
+    const full = nodes.map((n) => n.nodeValue ?? '').join('');
+    if (!full.includes('[')) return;
+    re.lastIndex = 0;
+    const found = [...full.matchAll(re)];
+    if (!found.length) return;
+    // offsets of each node in `full`
+    const starts: number[] = [];
+    let acc = 0;
+    for (const n of nodes) {
+      starts.push(acc);
+      acc += (n.nodeValue ?? '').length;
+    }
+    const nodeAt = (pos: number): number => {
+      let i = starts.length - 1;
+      while (i > 0 && starts[i]! > pos) i--;
+      return i;
+    };
+    for (const m of found.reverse()) {
+      const start = m.index ?? 0;
+      const end = start + m[0].length;
+      const value = map[m[0]] ?? m[0];
+      const si = nodeAt(start);
+      const ei = nodeAt(end - 1);
+      const first = nodes[si]!;
+      const last = nodes[ei]!;
+      const head = (first.nodeValue ?? '').slice(0, start - starts[si]!);
+      const tail = (last.nodeValue ?? '').slice(end - starts[ei]!);
+      if (si === ei) first.nodeValue = head + value + tail;
+      else {
+        first.nodeValue = head + value;
+        for (let i = si + 1; i < ei; i++) nodes[i]!.nodeValue = '';
+        last.nodeValue = tail;
+      }
+    }
+  };
+
   const fix = (node: Node): void => {
     if (!re) return;
-    if (node.nodeType === Node.TEXT_NODE) {
-      const v = node.nodeValue ?? '';
-      if (v.includes('[') && !inEditable(node)) {
-        re.lastIndex = 0;
-        const next = v.replace(re, (k) => map[k] ?? k);
-        if (next !== v) node.nodeValue = next;
+    const scopes = new Set<Element>();
+    const consider = (t: Node): void => {
+      const v = t.nodeValue ?? '';
+      // a split placeholder leaves "[" or "]" or a fragment in a node: look at the whole block when any bracket is present
+      if ((v.includes('[') || v.includes(']') || /(PERSON|EMAIL|PHONE|ORG|LOC|ID|SECRET|CUSTOM|_\d)/.test(v)) && !inEditable(t)) {
+        const sc = scopeOf(t);
+        if (sc) scopes.add(sc);
       }
-      return;
-    }
-    if (node.nodeType === Node.ELEMENT_NODE) {
+    };
+    if (node.nodeType === Node.TEXT_NODE) consider(node);
+    else if (node.nodeType === Node.ELEMENT_NODE) {
       const w = doc.createTreeWalker(node, NodeFilter.SHOW_TEXT);
-      for (let n = w.nextNode(); n; n = w.nextNode()) fix(n);
+      for (let n = w.nextNode(); n; n = w.nextNode()) consider(n);
     }
+    scopes.forEach(restoreScope);
   };
 
   const mo = new MutationObserver((muts) => {

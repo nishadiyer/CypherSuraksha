@@ -65,7 +65,7 @@ The extension works with no model files, using deterministic fallbacks. `npm run
 
 ## Supported sites
 
-Prompt redaction: chatgpt.com, chat.openai.com, claude.ai, gemini.google.com, copilot.microsoft.com.
+Prompt redaction: chatgpt.com, chat.openai.com, claude.ai, gemini.google.com, copilot.microsoft.com, copilot.com.
 Upload cloaking: Instagram, Facebook, X/Twitter, TikTok, LinkedIn, Reddit, Snapchat, Pinterest, Discord, WhatsApp Web, Telegram Web, Imgur, Flickr, Threads, Bluesky.
 Video: Google Meet, Zoom (`*.zoom.us`), WhatsApp Web.
 

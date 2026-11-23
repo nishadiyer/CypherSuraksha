@@ -6,7 +6,7 @@
     [/(^|\.)chatgpt\.com$|(^|\.)chat\.openai\.com$/, { composer: '#prompt-textarea', send: 'button[data-testid="send-button"]' }],
     [/(^|\.)claude\.ai$/, { composer: 'div[contenteditable="true"].ProseMirror', send: 'button[aria-label^="Send"]' }],
     [/(^|\.)gemini\.google\.com$/, { composer: 'rich-textarea .ql-editor, div.ql-editor[contenteditable="true"]', send: 'button.send-button, button[aria-label*="Send"]' }],
-    [/(^|\.)copilot\.microsoft\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
+    [/(^|\.)copilot\.microsoft\.com$|(^|\.)copilot\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
   ];
   const site = SITES.find(([re]) => re.test(location.hostname));
   const attrs = (el) => {

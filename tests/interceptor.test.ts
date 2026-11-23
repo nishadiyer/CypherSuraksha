@@ -70,7 +70,7 @@ describe('prompt interception (Gate 2)', () => {
 describe('response restoration', () => {
   it('restores placeholders in streamed assistant text but not in the composer', async () => {
     document.body.innerHTML = '<textarea>[PERSON_1] draft</textarea><div id="chat"></div>';
-    const r = installRestorer(document, { '[PERSON_1]': 'Ada Lovelace' });
+    const r = installRestorer(document, { '[PERSON_1]': 'Ada Lovelace' });  // (see also: split-placeholder tests below)
     const p = document.createElement('p');
     p.textContent = 'Hello [PERSON_1]!';
     document.querySelector('#chat')!.appendChild(p);

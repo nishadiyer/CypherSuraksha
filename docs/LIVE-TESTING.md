@@ -30,7 +30,7 @@ Expected: **3 items** redacted (name, email, phone). The toast says "Redacted 3 
 
 ## Checks 1–4: chat sites (P5.1.1 ChatGPT, P5.1.2 Claude, P5.1.3 Gemini, P5.1.4 Copilot)
 
-Sites: chatgpt.com, claude.ai, gemini.google.com, copilot.microsoft.com. Start a **new chat**, signed in.
+Sites: chatgpt.com, claude.ai, gemini.google.com, copilot.com (or copilot.microsoft.com). Start a **new chat**, signed in.
 
 1. **Before typing**, click the **AI Shield icon**. The **"This page"** section tells you directly whether AI Shield is running on this tab and whether it found the site's message box:
    - `✓ AI chat detected (chatgpt.com): AI Shield is running on this tab` and `✓ Message box: found` is what you want. "Send button: not on the page yet" is normal (many sites only show it after you type).

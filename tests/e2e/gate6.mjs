@@ -29,7 +29,10 @@ const CHAT_LIVE = `<!doctype html><body>
   window.__sent = []; let state = '';
   const ed = document.querySelector('[aria-label="Ask ChatGPT"]');
   ed.addEventListener('input', () => { state = ed.innerText; });
-  const send = () => { if (!state.trim()) return; window.__sent.push(state); state = ''; ed.textContent = ''; };
+  // The reply streams in token by token, each token in its own span (so a placeholder is never inside one text node).
+  const stream = () => { const p = document.createElement('p'); p.className = 'assistant'; document.getElementById('chat').appendChild(p);
+    ['Hello ', '[', 'PERSON', '_1', ']', ', I will write to ', '[EMAIL', '_1]', '.'].forEach((t, i) => setTimeout(() => { const s = document.createElement('span'); s.textContent = t; p.appendChild(s); }, 60 * i)); };
+  const send = () => { if (!state.trim()) return; window.__sent.push(state); state = ''; ed.textContent = ''; stream(); };
   document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && e.target === ed) { e.preventDefault(); send(); } }, true);
   document.querySelector('[data-testid=send-button]').addEventListener('click', send);
 </script></body>`;
@@ -62,6 +65,9 @@ export default async function gate6({ browser, sw }) {
   const liveSent = await live.evaluate(() => window.__sent);
   check('[live markup] message box found, Enter intercepted, placeholders sent', liveSent.length === 1 && /\[PERSON_1\]/.test(liveSent[0]) && /\[EMAIL_1\]/.test(liveSent[0]) && !/John|Doe|john\.doe@/.test(liveSent[0]), JSON.stringify(liveSent));
   check('[live markup] toast shown', (await readClosedShadowText(live)).includes('Redacted 2 sensitive items'), await readClosedShadowText(live));
+  await sleep(1200);
+  const streamed = await live.evaluate(() => document.querySelector('.assistant')?.textContent);
+  check('[live markup] a reply streamed token-by-token (placeholders split across pieces) is restored on screen', streamed === 'Hello John Doe, I will write to john.doe@example.com.', streamed);
   await live.close();
 
   // The popup's "This page" panel asks the content script what it sees (booleans only, no page content).

@@ -24,7 +24,9 @@
         "https://chat.openai.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
-        "https://copilot.microsoft.com/*"
+        "https://copilot.microsoft.com/*",
+        "https://copilot.com/*",
+        "https://www.copilot.com/*"
       ],
       "js": [
         "src/content/prompt.ts"
@@ -134,6 +136,8 @@
     "https://threads.net/*",
     "https://bsky.app/*",
     "https://meet.google.com/*",
-    "https://*.zoom.us/*"
+    "https://*.zoom.us/*",
+    "https://copilot.com/*",
+    "https://www.copilot.com/*"
   ]
 }
