@@ -201,7 +201,7 @@ All testing so far used stand-in pages. These leaves wait for real runs on the r
 
 - [ ] `P5.1.1` ChatGPT live interception
   - _acceptance:_ on chatgpt.com a prompt with a name+email is sent with placeholders and the toast shows
-  - _note:_ 2026-11-23 live run on real chatgpt.com (user's Chrome): extension loaded and running, but the message box selector #prompt-textarea no longer matches (popup status panel: Message box NOT found; text boxes seen: 'Ask ChatGPT' div[contenteditable=true][role=textbox] 574x26 plus large 'Start writing' editors). Selector updated to role=textbox aria-label^=Ask/Message (decoys excluded), send selector widened; unit + e2e on the reported markup pass. NOT ticked: awaiting a PASS re-test on the live site.
+  - _note:_ 2026-11-23 live re-test on real chatgpt.com after the selector fix: redaction WORKS (message reached the site with placeholders, ledger counted 1 prompt redacted). Gap: the toast was not visible on the live page. Added: top-layer rendering for all injected UI, 6 s toast, and a 'Show a test notification' button in the popup to tell 'toast not visible' from 'toast missed'. Not ticked yet: needs the user to confirm the toast / test notification is visible, plus the Send-button and reload-history checks.
 - [ ] `P5.1.2` Claude live interception
   - _acceptance:_ same check on claude.ai
 - [ ] `P5.1.3` Gemini live interception

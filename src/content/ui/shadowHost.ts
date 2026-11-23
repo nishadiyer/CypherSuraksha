@@ -39,6 +39,13 @@ export function createShadowUI(parent: Element = document.documentElement): Shad
   container.style.pointerEvents = 'auto';
   root.appendChild(container);
   parent.appendChild(host);
+  // Top layer (the same one modal dialogs use): sits above any page stacking context, overflow clip or transform.
+  try {
+    host.popover = 'manual';
+    host.showPopover();
+  } catch {
+    /* older Chrome: the max z-index fallback above still applies */
+  }
 
   return {
     mount: (node) => render(node, container),

@@ -3,9 +3,10 @@ import { newRequestId, send } from '../shared/messages';
 import type { PixelsResult } from '../types/shield';
 import { installUploadInterceptor } from './interceptors/uploadInterceptor';
 import { showCloakResult, showCloaking } from './ui/CloakBadge';
-import { registerPageStatus } from './status';
+import { onTestNotification, registerPageStatus } from './status';
 import { showToast } from './ui/Toast';
 
+onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
 registerPageStatus('upload', () => ({ fileInputs: document.querySelectorAll('input[type=file]').length }));
 
 /** Files that went out re-encoded with nothing cloaked (no face found); the badge reports them honestly. */

@@ -2,9 +2,11 @@ import type { PrivacyResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { showToast } from './ui/Toast';
 import { adapterFor, findComposer, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
-import { buttonCandidates, editableCandidates, registerPageStatus } from './status';
+import { buttonCandidates, editableCandidates, onTestNotification, registerPageStatus } from './status';
 
 const adapter = adapterFor(location.hostname);
+
+onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
 
 if (adapter) {
   // The send button often only exists once there is text, so the popup treats it as informational.

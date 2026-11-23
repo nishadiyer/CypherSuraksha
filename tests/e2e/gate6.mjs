@@ -80,6 +80,11 @@ export default async function gate6({ browser, sw }) {
   await pop.waitForSelector('[data-testid=page-active], [data-testid=page-inactive]', { timeout: 8000 }).catch(() => null);
   const txt = await pop.evaluate(() => document.body.innerText);
   check('popup "This page" says AI Shield is running and found the message box', /AI chat detected \(chatgpt\.com\)/.test(txt) && /Message box: found/.test(txt) && /Send button: found/.test(txt), txt.slice(0, 300));
+  // The popup's "Show a test notification" button: the toast appears on the page, in the browser's top layer.
+  await pop.evaluate(() => [...document.querySelectorAll('button')].find((b) => /test notification/i.test(b.textContent))?.click());
+  await sleep(700);
+  check('test notification: the toast appears on the page', (await readClosedShadowText(page)).includes('AI Shield test'), await readClosedShadowText(page));
+  check('toast host is in the top layer (above any page stacking)', await page.evaluate(() => [...document.documentElement.children].some((e) => e.matches(':popover-open'))));
   await pop.close();
   await page.close();
 

@@ -1,9 +1,11 @@
 import type { PeopleResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { installVideoSampler } from './interceptors/videoInterceptor';
-import { registerPageStatus } from './status';
+import { onTestNotification, registerPageStatus } from './status';
+import { showToast } from './ui/Toast';
 import { removePill, updatePill } from './ui/PeopleUI';
 
+onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
 registerPageStatus('video', () => ({ videos: document.querySelectorAll('video').length }));
 
 installVideoSampler(window, {

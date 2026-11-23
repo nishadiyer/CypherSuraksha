@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ShieldKind } from '../types/shield';
-import { addKeyword, loadVault, useLedger, usePageStatus, useSettings, type PageState } from './store';
+import { addKeyword, loadVault, showTestNotification, useLedger, usePageStatus, useSettings, type PageState } from './store';
 
 const PILLARS: Array<{ kind: ShieldKind; title: string; blurb: string }> = [
   { kind: 'PRIVACY', title: 'Privacy', blurb: 'Hide names, emails & secrets from AI chats' },
@@ -88,6 +88,7 @@ function ThisPage({ page }: { page: PageState }) {
       </p>
     );
   return (
+    <>
     <ul class="space-y-1 text-xs" data-testid="page-active">
       {page.status.parts.map((p) => {
         const d = p.detail;
@@ -104,6 +105,23 @@ function ThisPage({ page }: { page: PageState }) {
         return null;
       })}
     </ul>
+    <TestButton />
+    </>
+  );
+}
+
+function TestButton() {
+  const [msg, setMsg] = useState('');
+  return (
+    <div class="mt-2">
+      <button
+        class="rounded-md border border-slate-300 px-2 py-1 text-xs"
+        onClick={async () => setMsg((await showTestNotification()) ? 'Sent. Look at the bottom-right corner of the page for the message.' : 'This page did not answer. Reload it and try again.')}
+      >
+        Show a test notification on this page
+      </button>
+      {msg && <p class="mt-1 text-[10px] text-slate-500">{msg}</p>}
+    </div>
   );
 }
 

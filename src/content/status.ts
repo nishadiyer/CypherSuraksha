@@ -14,6 +14,12 @@ interface Registry {
 }
 const KEY = '__aiShieldStatus';
 
+/** Called when the popup's "show a test notification" button is pressed. */
+let testNotice: (() => void) | undefined;
+export function onTestNotification(fn: () => void): void {
+  testNotice = fn;
+}
+
 export function registerPageStatus(part: string, probe: Probe): void {
   const g = globalThis as unknown as Record<string, Registry | undefined>;
   const reg = (g[KEY] ??= { probes: {}, listening: false });
@@ -21,7 +27,13 @@ export function registerPageStatus(part: string, probe: Probe): void {
   if (reg.listening) return;
   reg.listening = true;
   chrome.runtime.onMessage.addListener((msg: { kind?: string }, sender, sendResponse) => {
-    if (sender.id !== chrome.runtime.id || msg?.kind !== 'PAGE_STATUS') return false;
+    if (sender.id !== chrome.runtime.id) return false;
+    if (msg?.kind === 'TEST_NOTIFICATION') {
+      testNotice?.();
+      sendResponse({ shown: !!testNotice });
+      return false;
+    }
+    if (msg?.kind !== 'PAGE_STATUS') return false;
     const status: PageStatus = { parts: Object.entries(reg.probes).map(([name, fn]) => ({ part: name, detail: fn() })) };
     sendResponse(status);
     return false;

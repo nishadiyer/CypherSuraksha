@@ -60,6 +60,19 @@ function supportedHosts(): RegExp[] {
   });
 }
 
+/** Asks the content script on the active tab to show a test toast. Resolves true if it answered. */
+export async function showTestNotification(): Promise<boolean> {
+  const forced = Number(new URLSearchParams(location.search).get('tabId'));
+  const [tab] = forced ? [await chrome.tabs.get(forced)] : await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!tab?.id) return false;
+  try {
+    const r = (await chrome.tabs.sendMessage(tab.id, { kind: 'TEST_NOTIFICATION' })) as { shown?: boolean } | undefined;
+    return !!r?.shown;
+  } catch {
+    return false;
+  }
+}
+
 export function usePageStatus(): PageState {
   const [state, setState] = useState<PageState>({ kind: 'loading' });
   useEffect(() => {
