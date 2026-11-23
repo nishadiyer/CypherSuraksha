@@ -144,7 +144,7 @@
 ### P5.1 Real sites
     - [ ] **P5.1.1** ChatGPT live interception
       - _acceptance:_ on chatgpt.com a prompt with a name+email is sent with placeholders and the toast shows
-      - _note:_ Not run: selectors only tested against stand-in pages.
+      - _note:_ 2026-11-23 live run on real chatgpt.com (user's Chrome): extension loaded and running, but the message box selector #prompt-textarea no longer matches (popup status panel: Message box NOT found; text boxes seen: 'Ask ChatGPT' div[contenteditable=true][role=textbox] 574x26 plus large 'Start writing' editors). Selector updated to role=textbox aria-label^=Ask/Message (decoys excluded), send selector widened; unit + e2e on the reported markup pass. NOT ticked: awaiting a PASS re-test on the live site.
     - [ ] **P5.1.2** Claude live interception
       - _acceptance:_ same check on claude.ai
     - [ ] **P5.1.3** Gemini live interception

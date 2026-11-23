@@ -8,7 +8,12 @@ export interface SiteAdapter {
 }
 
 const ADAPTERS: Array<[RegExp, SiteAdapter]> = [
-  [/(^|\.)chatgpt\.com$|(^|\.)chat\.openai\.com$/, { composer: '#prompt-textarea', send: 'button[data-testid="send-button"]' }],
+  [/(^|\.)chatgpt\.com$|(^|\.)chat\.openai\.com$/, {
+    // ChatGPT's message box lost its #prompt-textarea id; it is now a role=textbox labelled "Ask ..." / "Message ...".
+    // (Its big "Start writing" editors are NOT the composer and are deliberately not matched.)
+    composer: '#prompt-textarea, div[contenteditable="true"][role="textbox"][aria-label^="Ask"], div[contenteditable="true"][role="textbox"][aria-label^="Message"]',
+    send: 'button[data-testid="send-button"], button[data-testid="composer-submit-button"], button[aria-label^="Send"]',
+  }],
   [/(^|\.)claude\.ai$/, { composer: 'div[contenteditable="true"].ProseMirror', send: 'button[aria-label^="Send"]' }],
   [/(^|\.)gemini\.google\.com$/, { composer: 'rich-textarea .ql-editor, div.ql-editor[contenteditable="true"]', send: 'button.send-button, button[aria-label*="Send"]' }],
   [/(^|\.)copilot\.microsoft\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],

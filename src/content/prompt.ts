@@ -2,7 +2,7 @@ import type { PrivacyResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { showToast } from './ui/Toast';
 import { adapterFor, findComposer, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
-import { editableCandidates, registerPageStatus } from './status';
+import { buttonCandidates, editableCandidates, registerPageStatus } from './status';
 
 const adapter = adapterFor(location.hostname);
 
@@ -14,6 +14,11 @@ if (adapter) {
     sendButton: !!document.querySelector(adapter.send),
     // Only when the message box is missing: what on the page looks like one (attributes only), to fix the selector.
     candidates: findComposer(document, adapter.composer) ? '' : JSON.stringify(editableCandidates(document)),
+    // Message box found but no Send button: the buttons around the message box (sites show Send only after you type).
+    buttons: (() => {
+      const box = findComposer(document, adapter.composer);
+      return box && !document.querySelector(adapter.send) ? JSON.stringify(buttonCandidates(box)) : '';
+    })(),
   }));
   const restorer = installRestorer(document);
   void send({ kind: 'GET_ENTITY_MAP' }).then((r) => {

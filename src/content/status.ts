@@ -75,3 +75,26 @@ export function editableCandidates(doc: Document, limit = 5): EditableCandidate[
     .slice(0, limit)
     .map(({ area: _a, ...c }) => c);
 }
+
+export interface ButtonCandidate {
+  testid?: string;
+  aria?: string;
+  type?: string;
+  disabled: boolean;
+}
+
+/** Buttons in the nearest ancestor of `near` that has any (the composer's toolbar). Attributes only, never label text. */
+export function buttonCandidates(near: Element, limit = 8): ButtonCandidate[] {
+  let scope: Element | null = near;
+  for (let i = 0; i < 7 && scope; i++, scope = scope.parentElement) {
+    const buttons = [...scope.querySelectorAll('button, [role="button"]')];
+    if (buttons.length)
+      return buttons.slice(0, limit).map((b) => ({
+        testid: b.getAttribute('data-testid') ?? undefined,
+        aria: b.getAttribute('aria-label')?.slice(0, 40) ?? undefined,
+        type: b.getAttribute('type') ?? undefined,
+        disabled: (b as HTMLButtonElement).disabled === true || b.getAttribute('aria-disabled') === 'true',
+      }));
+  }
+  return [];
+}

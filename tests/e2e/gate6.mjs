@@ -18,6 +18,22 @@ const CHAT = `<!doctype html><body>
   btn.addEventListener('pointerdown', () => window.__pd++);
 </script></body>`;
 
+// The markup reported from the live chatgpt.com (Nov 2026): no #prompt-textarea id; a role=textbox labelled "Ask ChatGPT";
+// plus big "Start writing" editors that are NOT the composer.
+const CHAT_LIVE = `<!doctype html><body>
+<div contenteditable="true" role="textbox" aria-label="Start writing" style="width:575px;height:172px"></div>
+<div contenteditable="true" role="textbox" aria-label="Start writing" style="width:575px;height:146px"></div>
+<form><div id="chat"></div><div contenteditable="true" role="textbox" aria-label="Ask ChatGPT" style="width:574px;min-height:26px;border:1px solid #888"></div>
+<button data-testid="send-button" type="button">Send</button></form>
+<script>
+  window.__sent = []; let state = '';
+  const ed = document.querySelector('[aria-label="Ask ChatGPT"]');
+  ed.addEventListener('input', () => { state = ed.innerText; });
+  const send = () => { if (!state.trim()) return; window.__sent.push(state); state = ''; ed.textContent = ''; };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && e.target === ed) { e.preventDefault(); send(); } }, true);
+  document.querySelector('[data-testid=send-button]').addEventListener('click', send);
+</script></body>`;
+
 export default async function gate6({ browser, sw }) {
   console.log('Checkpoint 1/4 — contenteditable composer, capture-phase page handlers, toast');
   const { page } = await fakeSite(browser, 'chatgpt.com', CHAT);
@@ -37,6 +53,17 @@ export default async function gate6({ browser, sw }) {
     check(`[${mode}] reply restored on screen`, shown === 'Hello John Doe, noted john.doe@example.com.', shown);
     await sleep(4500);
   }
+  console.log('Live ChatGPT markup (no id, "Ask ChatGPT" label, decoy "Start writing" editors)');
+  const { page: live } = await fakeSite(browser, 'chatgpt.com', CHAT_LIVE);
+  await live.click('[aria-label="Ask ChatGPT"]');
+  await live.keyboard.type('Hi, my name is John Doe and my email is john.doe@example.com');
+  await live.keyboard.press('Enter');
+  await sleep(1500);
+  const liveSent = await live.evaluate(() => window.__sent);
+  check('[live markup] message box found, Enter intercepted, placeholders sent', liveSent.length === 1 && /\[PERSON_1\]/.test(liveSent[0]) && /\[EMAIL_1\]/.test(liveSent[0]) && !/John|Doe|john\.doe@/.test(liveSent[0]), JSON.stringify(liveSent));
+  check('[live markup] toast shown', (await readClosedShadowText(live)).includes('Redacted 2 sensitive items'), await readClosedShadowText(live));
+  await live.close();
+
   // The popup's "This page" panel asks the content script what it sees (booleans only, no page content).
   const status = await sw.evaluate(async () => {
     const [tab] = await chrome.tabs.query({ url: 'https://chatgpt.com/*' });
