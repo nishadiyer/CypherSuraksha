@@ -144,7 +144,7 @@
 ### P5.1 Real sites
     - [x] **P5.1.1** ChatGPT live interception
       - _acceptance:_ on chatgpt.com a prompt with a name+email is sent with placeholders and the toast shows
-      - _note:_ 2026-11-23 follow-up: user saw placeholders instead of real values in a live ChatGPT REPLY. Likely cause (not proven): the restorer only handled a placeholder inside ONE text node, but streaming UIs render replies in many small pieces. Restorer now handles placeholders split across nodes (unit + e2e on a token-by-token stream); needs a live re-check of reply restoration.
+      - _note:_ 2026-11-23 live: user still sees placeholders in ChatGPT after the split-node fix. Leading hypothesis (not proven): the reply is rendered in ChatGPT's canvas ('Start writing' contenteditable editor); the restorer deliberately never edits editable regions (it would look like a user edit and could be saved with real data). Added popup counters (placeholders remembered / still showing / inside editable areas) to confirm.
     - [x] **P5.1.2** Claude live interception
       - _acceptance:_ same check on claude.ai
       - _note:_ 2026-11-23 LIVE PASS on real claude.ai in the user's Chrome (reported by the user, not machine-verified): popup status showed AI Shield running, message box + send button found with the shipped selectors; the fake name/email/phone prompt was redacted, toast shown, placeholders in the history after reload. No code change was needed for Claude.
@@ -153,7 +153,7 @@
       - _note:_ 2026-11-23 LIVE PASS on real gemini.google.com in the user's Chrome (reported by the user, not machine-verified): popup status showed running, message box + send button found with the shipped selectors; prompt redacted, toast shown, placeholders in history after reload. No code change needed for Gemini.
     - [ ] **P5.1.4** Copilot live interception
       - _acceptance:_ same check on copilot.microsoft.com
-      - _note:_ 2026-11-23 live: user's Copilot is at copilot.com/chat, which the extension did not know (popup said 'does not apply'). Added copilot.com and www.copilot.com (content script + host permission). Selectors for that site are untested: needs the popup 'This page' status, then the live prompt test.
+      - _note:_ 2026-11-23 live: Copilot at copilot.com/chat now recognised; popup status showed running but message box NOT found; text box seen = span#m365-chat-editor-target-element[contenteditable=true][role=textbox][aria-label='Message Copilot'] 684x27. Selector added (+ generic role=textbox aria-label^=Message); unit-tested. NOT ticked: needs the live prompt test.
     - [ ] **P5.1.5** Upload cloaking on a live social site
       - _acceptance:_ on a listed site an uploaded photo arrives cloaked and the badge shows
     - [ ] **P5.1.6** Pill on a live Meet/Zoom/WhatsApp call

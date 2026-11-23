@@ -42,3 +42,22 @@ describe('button diagnostics', () => {
     expect(JSON.stringify(list)).not.toMatch(/SECRET/);
   });
 });
+
+describe('Copilot adapter', () => {
+  const copilot = adapterFor('copilot.com')!;
+  it('is selected for copilot.com and the older host', () => {
+    expect(adapterFor('copilot.com')).not.toBeNull();
+    expect(adapterFor('www.copilot.com')).not.toBeNull();
+    expect(adapterFor('copilot.microsoft.com')).not.toBeNull();
+  });
+  it('finds the live message box (a role=textbox span labelled "Message Copilot")', () => {
+    document.body.innerHTML = '<span id="m365-chat-editor-target-element" contenteditable="true" role="textbox" aria-label="Message Copilot"></span><input type="search" aria-label="Search">';
+    expect(findComposer(document, copilot.composer)?.id).toBe('m365-chat-editor-target-element');
+  });
+  it('also matches a role=textbox without the id, and ignores other boxes', () => {
+    document.body.innerHTML = '<div contenteditable="true" role="textbox" aria-label="Message Copilot"></div>';
+    expect(findComposer(document, copilot.composer)).not.toBeNull();
+    document.body.innerHTML = '<div contenteditable="true" role="textbox" aria-label="Start writing"></div>';
+    expect(findComposer(document, copilot.composer)).toBeNull();
+  });
+});

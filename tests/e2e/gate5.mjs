@@ -67,5 +67,17 @@ export default async function gate5({ browser, sw }) {
   const shown = await popup.$eval('[data-testid=promptsRedacted]', (e) => Number(e.textContent));
   const stored = await sw.evaluate(async () => (await chrome.storage.local.get('ledger')).ledger.promptsRedacted);
   check('ledger in popup matches chrome.storage.local counters', shown === stored && stored >= 3, `${shown} vs ${stored}`);
+  // Remove all Never-share keywords (only hashes are stored, so they cannot be removed one by one).
+  await popup.bringToFront(); await popup.reload(); await popup.waitForSelector('h1'); await sleep(300);
+  const clickByText = (re) => popup.evaluate((src) => [...document.querySelectorAll('button')].find((b) => new RegExp(src, 'i').test(b.textContent))?.click(), re.source);
+  await clickByText(/remove all keywords/); await sleep(200);
+  const stillThere = await sw.evaluate(async () => (await chrome.storage.local.get('vault')).vault);
+  check('first click only asks for confirmation (keywords still stored)', stillThere?.hashes?.length === 1, JSON.stringify(stillThere));
+  await clickByText(/click again to remove all keywords/); await sleep(500);
+  const gone = await sw.evaluate(async () => (await chrome.storage.local.get('vault')).vault);
+  check('second click removes every stored keyword hash', gone === undefined, JSON.stringify(gone));
+  check('popup shows 0 protected keywords afterwards', /0 protected keywords/.test(await popup.evaluate(() => document.body.innerText)));
+  s = await send('Status of project bluebird please');
+  check('a removed keyword is no longer redacted', s === 'Status of project bluebird please', s);
   await page.close(); await popup.close();
 }

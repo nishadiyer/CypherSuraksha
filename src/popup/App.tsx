@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ShieldKind } from '../types/shield';
-import { addKeyword, loadVault, showTestNotification, useLedger, usePageStatus, useSettings, type PageState } from './store';
+import { addKeyword, clearVault, loadVault, showTestNotification, useLedger, usePageStatus, useSettings, type PageState } from './store';
 
 const PILLARS: Array<{ kind: ShieldKind; title: string; blurb: string }> = [
   { kind: 'PRIVACY', title: 'Privacy', blurb: 'Hide names, emails & secrets from AI chats' },
@@ -99,6 +99,9 @@ function ThisPage({ page }: { page: PageState }) {
             d.messageBox || !d.candidates ? null : <Candidates key="c" json={String(d.candidates)} />,
             <Row ok={d.sendButton ? true : 'info'} key="s">Send button: {d.sendButton ? 'found' : 'not on the page yet (many sites only show it after you type)'}</Row>,
             !d.sendButton && d.buttons ? <Buttons key="b" json={String(d.buttons)} /> : null,
+            <Row ok="info" key="r">Placeholders remembered for this tab: {String(d.remembered ?? 0)}</Row>,
+            Number(d.placeholdersRestorable) > 0 ? <Row ok={false} key="pr">{String(d.placeholdersRestorable)} placeholder(s) are still showing on screen and should have been replaced. Tell the developer.</Row> : null,
+            Number(d.placeholdersInEditable) > 0 ? <Row ok="info" key="pe">{String(d.placeholdersInEditable)} placeholder(s) sit inside an editable area (for example a document or canvas editor). AI Shield leaves editable text alone on purpose: changing it would make the site think you typed the real value and could save it.</Row> : null,
           ];
         if (p.part === 'upload') return <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page)</Row>;
         if (p.part === 'video') return <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>;
@@ -133,6 +136,7 @@ export function App() {
   const [kw, setKw] = useState('');
   const [kwCount, setKwCount] = useState(0);
   const [kwMsg, setKwMsg] = useState('');
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     void loadVault().then((v) => setKwCount(v.hashes.length));
@@ -212,6 +216,20 @@ export function App() {
           {kwCount} protected keyword{kwCount === 1 ? '' : 's'}. Only salted SHA-256 hashes are stored.
           {kwMsg && <span class="ml-1 text-emerald-700">{kwMsg}</span>}
         </p>
+        {kwCount > 0 && (
+          <button
+            class="mt-1 rounded-md border border-red-300 px-2 py-1 text-xs text-red-700"
+            onClick={async () => {
+              if (!confirmClear) return setConfirmClear(true);
+              await clearVault();
+              setKwCount(0);
+              setConfirmClear(false);
+              setKwMsg('All keywords removed.');
+            }}
+          >
+            {confirmClear ? 'Click again to remove all keywords' : 'Remove all keywords'}
+          </button>
+        )}
       </Section>
 
       <Section title="Trusted sites">

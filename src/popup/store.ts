@@ -35,6 +35,11 @@ export async function loadVault(): Promise<Vault> {
   return vault ?? EMPTY_VAULT;
 }
 
+/** Forgets every Never-share keyword (only hashes are stored, so single entries cannot be listed or removed). */
+export async function clearVault(): Promise<void> {
+  await chrome.storage.local.remove('vault');
+}
+
 /** Hash first, then persist. The plaintext keyword never reaches storage. */
 export async function addKeyword(keyword: string): Promise<Vault> {
   const next = await addToVault(await loadVault(), keyword);

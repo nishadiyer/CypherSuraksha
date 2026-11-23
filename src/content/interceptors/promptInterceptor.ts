@@ -16,7 +16,7 @@ const ADAPTERS: Array<[RegExp, SiteAdapter]> = [
   }],
   [/(^|\.)claude\.ai$/, { composer: 'div[contenteditable="true"].ProseMirror', send: 'button[aria-label^="Send"]' }],
   [/(^|\.)gemini\.google\.com$/, { composer: 'rich-textarea .ql-editor, div.ql-editor[contenteditable="true"]', send: 'button.send-button, button[aria-label*="Send"]' }],
-  [/(^|\.)copilot\.microsoft\.com$|(^|\.)copilot\.com$/, { composer: 'textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
+  [/(^|\.)copilot\.microsoft\.com$|(^|\.)copilot\.com$/, { composer: '#m365-chat-editor-target-element, [contenteditable="true"][role="textbox"][aria-label^="Message"], textarea#userInput, textarea[data-testid="composer-input"], textarea', send: 'button[data-testid="submit-button"], button[aria-label*="Submit"], button[aria-label*="Send"]' }],
 ];
 
 export function adapterFor(hostname: string): SiteAdapter | null {
@@ -218,6 +218,8 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export interface Restorer {
   setMap(map: EntityMap): void;
+  /** how many placeholders this tab currently remembers */
+  size(): number;
   stop(): void;
 }
 
@@ -317,6 +319,7 @@ export function installRestorer(doc: Document, initial: EntityMap = {}): Restore
   else doc.addEventListener('DOMContentLoaded', start, { once: true });
 
   return {
+    size: () => Object.keys(map).length,
     setMap(next) {
       map = { ...map, ...next };
       rebuild();
@@ -324,4 +327,33 @@ export function installRestorer(doc: Document, initial: EntityMap = {}): Restore
     },
     stop: () => mo.disconnect(),
   };
+}
+
+/**
+ * Diagnostics for the popup: how many placeholders are on the page right now, split into ones AI Shield can restore and
+ * ones inside editable areas (which it deliberately never rewrites: editing a page's own editor text would make the
+ * site think you typed the real value and could save it). Counts only; no text leaves this function.
+ */
+export function countPlaceholders(doc: Document): { restorable: number; inEditable: number } {
+  const re = /\[(?:PERSON|ORG|LOC|ID|SECRET|EMAIL|PHONE|CUSTOM)_\d+\]/g;
+  const scopes = new Map<Element, { text: string; editable: boolean }>();
+  const w = doc.createTreeWalker(doc.body ?? doc.documentElement, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    const el = n.parentElement;
+    if (!el || el.closest('script, style, noscript')) continue;
+    const scope = el.closest('p, li, h1, h2, h3, h4, h5, h6, td, th, blockquote, pre, dd, dt') ?? el;
+    const entry = scopes.get(scope) ?? { text: '', editable: false };
+    entry.text += n.nodeValue ?? '';
+    if (el.isContentEditable || el.closest('textarea, [contenteditable="true"]')) entry.editable = true;
+    scopes.set(scope, entry);
+  }
+  let restorable = 0;
+  let inEditable = 0;
+  for (const { text, editable } of scopes.values()) {
+    if (!text.includes('[')) continue;
+    const found = text.match(re)?.length ?? 0;
+    if (editable) inEditable += found;
+    else restorable += found;
+  }
+  return { restorable, inEditable };
 }

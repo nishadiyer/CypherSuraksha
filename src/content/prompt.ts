@@ -1,7 +1,7 @@
 import type { PrivacyResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { showToast } from './ui/Toast';
-import { adapterFor, findComposer, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
+import { adapterFor, countPlaceholders, findComposer, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
 import { buttonCandidates, editableCandidates, onTestNotification, registerPageStatus } from './status';
 
 const adapter = adapterFor(location.hostname);
@@ -9,6 +9,7 @@ const adapter = adapterFor(location.hostname);
 onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
 
 if (adapter) {
+  const restorer = installRestorer(document);
   // The send button often only exists once there is text, so the popup treats it as informational.
   registerPageStatus('prompt', () => ({
     site: location.hostname,
@@ -16,13 +17,15 @@ if (adapter) {
     sendButton: !!document.querySelector(adapter.send),
     // Only when the message box is missing: what on the page looks like one (attributes only), to fix the selector.
     candidates: findComposer(document, adapter.composer) ? '' : JSON.stringify(editableCandidates(document)),
+    remembered: restorer.size(),
+    placeholdersRestorable: countPlaceholders(document).restorable,
+    placeholdersInEditable: countPlaceholders(document).inEditable,
     // Message box found but no Send button: the buttons around the message box (sites show Send only after you type).
     buttons: (() => {
       const box = findComposer(document, adapter.composer);
       return box && !document.querySelector(adapter.send) ? JSON.stringify(buttonCandidates(box)) : '';
     })(),
   }));
-  const restorer = installRestorer(document);
   void send({ kind: 'GET_ENTITY_MAP' }).then((r) => {
     if (r.ok && 'map' in r) restorer.setMap(r.map);
   }).catch(() => undefined);

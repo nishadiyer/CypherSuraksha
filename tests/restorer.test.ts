@@ -48,3 +48,17 @@ describe('placeholder restoration across streamed pieces', () => {
     r.stop();
   });
 });
+
+describe('placeholder counter (popup diagnostics)', () => {
+  it('counts restorable placeholders, including split ones, apart from ones inside editable areas', async () => {
+    const { countPlaceholders } = await import('../src/content/interceptors/promptInterceptor');
+    document.body.innerHTML = '<p>Hi [PERSON_1] and <span>[EMAIL</span><span>_1]</span></p><div contenteditable="true"><p>Dear [PERSON_1], note [PERSON_2]</p></div><p>no brackets</p>';
+    expect(countPlaceholders(document)).toEqual({ restorable: 2, inEditable: 2 });
+  });
+  it('is zero on a clean page and carries only counts', async () => {
+    const { countPlaceholders } = await import('../src/content/interceptors/promptInterceptor');
+    document.body.innerHTML = '<p>Hello world [not a placeholder]</p>';
+    const c = countPlaceholders(document);
+    expect(c).toEqual({ restorable: 0, inEditable: 0 });
+  });
+});
