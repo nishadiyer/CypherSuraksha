@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ShieldKind } from '../types/shield';
-import { addKeyword, loadVault, useLedger, useSettings } from './store';
+import { addKeyword, loadVault, useLedger, usePageStatus, useSettings, type PageState } from './store';
 
 const PILLARS: Array<{ kind: ShieldKind; title: string; blurb: string }> = [
   { kind: 'PRIVACY', title: 'Privacy', blurb: 'Hide names, emails & secrets from AI chats' },
@@ -29,9 +29,46 @@ const Section = ({ title, children }: { title: string; children: preact.Componen
   </section>
 );
 
+function Row({ ok, children }: { ok: boolean | 'info'; children: preact.ComponentChildren }) {
+  return (
+    <li class="flex gap-1.5">
+      <span class={ok === true ? 'text-emerald-700' : ok === 'info' ? 'text-slate-400' : 'text-red-700'} aria-hidden="true">{ok === true ? '✓' : ok === 'info' ? '•' : '✗'}</span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function ThisPage({ page }: { page: PageState }) {
+  if (page.kind === 'loading') return <p class="text-xs text-slate-400">Checking this tab…</p>;
+  if (page.kind === 'other') return <p class="text-xs text-slate-500">AI Shield does not apply to this page. It works on the supported chat, upload and video-call sites.</p>;
+  if (page.kind === 'inactive')
+    return (
+      <p class="text-xs text-red-700" data-testid="page-inactive">
+        ✗ {page.host} is a supported site, but AI Shield is <b>not running on this tab</b>. Reload the tab (Cmd/Ctrl+R). If it still says this, the extension is not loading here.
+      </p>
+    );
+  return (
+    <ul class="space-y-1 text-xs" data-testid="page-active">
+      {page.status.parts.map((p) => {
+        const d = p.detail;
+        if (p.part === 'prompt')
+          return [
+            <Row ok key="p">AI chat detected ({String(d.site)}): AI Shield is running on this tab</Row>,
+            <Row ok={Boolean(d.messageBox)} key="m">Message box: {d.messageBox ? 'found' : 'NOT found. This site may have changed its page, tell the developer'}</Row>,
+            <Row ok={d.sendButton ? true : 'info'} key="s">Send button: {d.sendButton ? 'found' : 'not on the page yet (many sites only show it after you type)'}</Row>,
+          ];
+        if (p.part === 'upload') return <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page)</Row>;
+        if (p.part === 'video') return <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>;
+        return null;
+      })}
+    </ul>
+  );
+}
+
 export function App() {
   const [settings, setSettings] = useSettings();
   const ledger = useLedger();
+  const page = usePageStatus();
   const [domainInput, setDomainInput] = useState('');
   const [kw, setKw] = useState('');
   const [kwCount, setKwCount] = useState(0);
@@ -56,6 +93,10 @@ export function App() {
         </div>
         <Toggle label="Enable AI Shield" on={settings.enabled} onChange={(enabled) => setSettings({ ...settings, enabled })} />
       </header>
+
+      <Section title="This page">
+        <ThisPage page={page} />
+      </Section>
 
       <Section title="Shields">
         <ul class="space-y-2">

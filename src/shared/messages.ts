@@ -16,6 +16,15 @@ export type ExtReply =
   | { ok: true }
   | { ok: false; error: string };
 
+/** popup -> content script: "what do you see on this page?" (answer carries no page content) */
+export interface PageStatusPart {
+  part: string;
+  detail: Record<string, boolean | number | string>;
+}
+export interface PageStatus {
+  parts: PageStatusPart[];
+}
+
 export interface SiteState {
   enabled: boolean;
   allowlisted: boolean;

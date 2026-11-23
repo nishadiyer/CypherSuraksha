@@ -18,7 +18,7 @@ const CHAT = `<!doctype html><body>
   btn.addEventListener('pointerdown', () => window.__pd++);
 </script></body>`;
 
-export default async function gate6({ browser }) {
+export default async function gate6({ browser, sw }) {
   console.log('Checkpoint 1/4 — contenteditable composer, capture-phase page handlers, toast');
   const { page } = await fakeSite(browser, 'chatgpt.com', CHAT);
   const prompt = 'Hi, my name is John Doe and my email is john.doe@example.com';
@@ -37,5 +37,22 @@ export default async function gate6({ browser }) {
     check(`[${mode}] reply restored on screen`, shown === 'Hello John Doe, noted john.doe@example.com.', shown);
     await sleep(4500);
   }
+  // The popup's "This page" panel asks the content script what it sees (booleans only, no page content).
+  const status = await sw.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ url: 'https://chatgpt.com/*' });
+    return chrome.tabs.sendMessage(tab.id, { kind: 'PAGE_STATUS' });
+  });
+  const prompt1 = status?.parts?.find((p) => p.part === 'prompt')?.detail;
+  check('page status: the content script answers and reports the chat site', prompt1?.site === 'chatgpt.com', JSON.stringify(status));
+  check('page status: message box and send button found', prompt1?.messageBox === true && prompt1?.sendButton === true, JSON.stringify(prompt1));
+  check('page status carries no page content (only site name, booleans)', JSON.stringify(status).length < 200 && !/John|Doe|example\.com\//.test(JSON.stringify(status)), JSON.stringify(status));
+  // The real popup panel, pointed at that tab.
+  const info = await sw.evaluate(async () => ({ id: chrome.runtime.id, tab: (await chrome.tabs.query({ url: 'https://chatgpt.com/*' }))[0].id }));
+  const pop = await browser.newPage();
+  await pop.goto(`chrome-extension://${info.id}/src/popup/index.html?tabId=${info.tab}`);
+  await pop.waitForSelector('[data-testid=page-active], [data-testid=page-inactive]', { timeout: 8000 }).catch(() => null);
+  const txt = await pop.evaluate(() => document.body.innerText);
+  check('popup "This page" says AI Shield is running and found the message box', /AI chat detected \(chatgpt\.com\)/.test(txt) && /Message box: found/.test(txt) && /Send button: found/.test(txt), txt.slice(0, 300));
+  await pop.close();
   await page.close();
 }

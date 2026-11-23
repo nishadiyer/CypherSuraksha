@@ -1,11 +1,18 @@
 import type { PrivacyResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { showToast } from './ui/Toast';
-import { adapterFor, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
+import { adapterFor, findComposer, installPromptInterceptor, installRestorer } from './interceptors/promptInterceptor';
+import { registerPageStatus } from './status';
 
 const adapter = adapterFor(location.hostname);
 
 if (adapter) {
+  // The send button often only exists once there is text, so the popup treats it as informational.
+  registerPageStatus('prompt', () => ({
+    site: location.hostname,
+    messageBox: !!findComposer(document, adapter.composer),
+    sendButton: !!document.querySelector(adapter.send),
+  }));
   const restorer = installRestorer(document);
   void send({ kind: 'GET_ENTITY_MAP' }).then((r) => {
     if (r.ok && 'map' in r) restorer.setMap(r.map);

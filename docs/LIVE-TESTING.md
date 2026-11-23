@@ -32,7 +32,10 @@ Expected: **3 items** redacted (name, email, phone). The toast says "Redacted 3 
 
 Sites: chatgpt.com, claude.ai, gemini.google.com, copilot.microsoft.com. Start a **new chat**, signed in.
 
-1. **Before typing**, open DevTools (F12) → Console, paste `docs/live-testing/inspect-selectors.js`, press Enter. Save the output (also on your clipboard). It shows whether the extension's message-box and send-button selectors match.
+1. **Before typing**, click the **AI Shield icon**. The **"This page"** section tells you directly whether AI Shield is running on this tab and whether it found the site's message box:
+   - `✓ AI chat detected (chatgpt.com): AI Shield is running on this tab` and `✓ Message box: found` is what you want. "Send button: not on the page yet" is normal (many sites only show it after you type).
+   - `✗ … not running on this tab`: reload the tab (Cmd+R). If it still says that, tell me.
+   - `✗ Message box: NOT found`: the site changed its page. Tell me, and also run the DevTools snippet `docs/live-testing/inspect-selectors.js` (type `allow pasting` in the Console first, then paste it) and send me the **last screen** of its output.
 2. Type or paste the fake prompt, then press **Enter** (do not click anything else).
 3. Look for the **toast** "Redacted N sensitive items" bottom-right/top-right of the page.
 4. **Verify what the site actually received:** after the reply finishes, **reload the page** (this also clears the extension's on-screen restore map) and open that conversation. In the history, your message should read `[PERSON_1]`, `[EMAIL_1]`, `[PHONE_1]` instead of the real values. That proves the placeholders, not the originals, reached the site.

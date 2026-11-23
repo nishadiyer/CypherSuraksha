@@ -1,7 +1,10 @@
 import type { PeopleResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
 import { installVideoSampler } from './interceptors/videoInterceptor';
+import { registerPageStatus } from './status';
 import { removePill, updatePill } from './ui/PeopleUI';
+
+registerPageStatus('video', () => ({ videos: document.querySelectorAll('video').length }));
 
 installVideoSampler(window, {
   async send(frame) {
