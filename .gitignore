@@ -8,3 +8,4 @@ tests/fixtures/deepfake/*
 tests/fixtures/deepfake-test/*
 !tests/fixtures/deepfake-test/manifest.json
 .venv-people
+.cloak-work

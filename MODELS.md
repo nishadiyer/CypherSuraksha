@@ -193,6 +193,25 @@ Max change 8/255 per channel (about 3%). 40 photos had 64 faces; 6 of 40 hit the
 - Cost: about 213 MB of models, 8-15 s per single-face photo on WASM (first photo about 17 s including model load), longer for groups, which hit the 20 s budget.
 - Claim to make: "disrupts FaceNet-class face recognition", not "defeats facial recognition".
 
+### Ensemble experiment: adding iResNet and ViT recognisers did not help (negative result)
+
+To make the cloak transfer to recognisers it wasn't built on (ArcFace-style), I added recognisers from other families to the PGD ensemble and measured every recogniser, members marked `*`, the rest unseen. Same protocol as above (LFW, 40 identities, +/-8/255, 30 steps, rank-1, `scripts/cloak/bench_ensemble.py`). New recognisers, all rebuilt from weights only (`scripts/cloak/recognisers.py`, no third-party code run): iResNet-18 (AdaFace, WebFace4M), iResNet-101 (AdaFace, WebFace12M), two ViT-tiny/8 (AdaFace and ArcFace losses, MS1MV3).
+
+| Ensemble used for the cloak | VGGFace2 | CASIA | IR-18 | IR-101 | ViT-A | ViT-B | ArcFace R50 |
+|---|---|---|---|---|---|---|---|
+| none (clean) | 97.5 | 97.5 | 95.0 | 97.5 | 85.0 | 90.0 | 97.5 |
+| VGGFace2 + CASIA (shipped) | **30.0*** | **32.5*** | 75.0 | 95.0 | 62.5 | 60.0 | 95.0 |
+| + IR-18 | 30.0* | 37.5* | **70.0*** | 95.0 | 62.5 | 57.5 | 92.5 |
+| + ViT-A | 30.0* | 35.0* | 75.0 | 95.0 | **62.5*** | 60.0 | 95.0 |
+| + IR-18 + ViT-A | 37.5* | 37.5* | 67.5* | 95.0 | 62.5* | 62.5 | 92.5 |
+| + IR-18 + IR-101 + ViT-A | 40.0* | 37.5* | 70.0* | **97.5*** | 62.5* | 62.5 | 92.5 |
+
+Attacked **alone** (white-box), IR-18 only fell to 85%, IR-101 stayed at 97.5% and ViT-A at 85%, while a FaceNet falls to about 30%. So extra members bought **no extra transfer** (ArcFace 92.5-95% in every row) and the members themselves are barely disrupted; the FaceNet-only cloak already lowers the weak ViT-tiny recognisers (85/90% to 60%) and IR-18 (95% to 75%) as a side effect. The larger ensembles also cost more time per face (about 4 s vs 2.5 s in PyTorch for the 4-member set).
+
+**Why (bisected on 8 images):** the attack *does* work inside its own optimisation on every model (similarity to the clean embedding driven to about 0 for IR-101), and the effect **survives being applied to the real, quantised, native-resolution photo** (IR-101 0.15, IR-18 0.12). It is lost only in the **attacker's view**: viewed through the attack's own sampler at the attacker's exact crop, IR-101 is back to 0.86. The attacker's fixed box was 0.74x my detector's box and about 0.22 of its height higher (UltraFace boxes are loose and low), and iResNet/ViT recognisers are far more sensitive to crop position and scale than FaceNet (IR-101 similarity at the optimised crop 0.06, 0.38 at 0.8x, 0.36 at 1.3x, 0.78 at 1.6x). Training over a much wider random range of crop scales and shifts (0.4-1.1x, up to 0.35 shift) did **not** fix it, even though the attacker's crop was inside that range. Resampling method (antialiasing, supersampling, optimising at native resolution) made no difference.
+
+**Budget needed (IR-101 alone, wide jitter):** similarity at the attacker's crop 0.86 at +/-8, 0.74 at +/-16, 0.68 at +/-16 with 80 steps, 0.54 at +/-24 with 80 steps. Telling two people apart typically needs similarity around 0.3 or below, so a crop-robust cloak against this family needs **visibly strong noise** and many more steps. Conclusion: at invisible budgets this method does not protect against iResNet/ViT-family recognisers, and adding them to the ensemble does not change that. The shipped FaceNet pair stays as it is; a stronger guarantee needs a different tool (for example blurring faces, which works against every recogniser but is visible). Reproduce with `python scripts/cloak/fetch_eval_assets.py WORK` then `scripts/cloak/bench_ensemble.py` (see its docstring). Caveats: 40 identities, one gallery photo each; LFW only; these recognisers are research-licensed (WebFace/MS1MV3/InsightFace) and used for evaluation only.
+
 ## Getting weights with Microsoft Olive / Foundry
 
 Olive exports and quantizes; the commands below are the general pattern. Check Olive's docs for current flags and recipes.
