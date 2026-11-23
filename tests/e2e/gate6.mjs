@@ -37,6 +37,19 @@ const CHAT_LIVE = `<!doctype html><body>
   document.querySelector('[data-testid=send-button]').addEventListener('click', send);
 </script></body>`;
 
+// Copilot (copilot.com/chat): the message box is a role=textbox *span* with an m365 id.
+const CHAT_COPILOT = `<!doctype html><body>
+<form><div id="chat"></div><span id="m365-chat-editor-target-element" contenteditable="true" role="textbox" aria-label="Message Copilot" style="display:block;width:684px;min-height:27px;border:1px solid #888"></span>
+<button aria-label="Submit" type="button">Send</button></form>
+<script>
+  window.__sent = []; let state = '';
+  const ed = document.getElementById('m365-chat-editor-target-element');
+  ed.addEventListener('input', () => { state = ed.innerText; });
+  const send = () => { if (!state.trim()) return; window.__sent.push(state); state = ''; ed.textContent = ''; };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && e.target === ed) { e.preventDefault(); send(); } }, true);
+  document.querySelector('button[aria-label=Submit]').addEventListener('click', send);
+</script></body>`;
+
 export default async function gate6({ browser, sw }) {
   console.log('Checkpoint 1/4 — contenteditable composer, capture-phase page handlers, toast');
   const { page } = await fakeSite(browser, 'chatgpt.com', CHAT);
@@ -70,6 +83,17 @@ export default async function gate6({ browser, sw }) {
   check('[live markup] a reply streamed token-by-token (placeholders split across pieces) is restored on screen', streamed === 'Hello John Doe, I will write to john.doe@example.com.', streamed);
   await live.close();
 
+  console.log('Copilot markup (role=textbox span, copilot.com)');
+  const { page: cop } = await fakeSite(browser, 'copilot.com', CHAT_COPILOT);
+  await cop.click('#m365-chat-editor-target-element');
+  await cop.keyboard.type('Hi, my name is John Doe and my email is john.doe@example.com');
+  await cop.keyboard.press('Enter');
+  await sleep(1500);
+  const copSent = await cop.evaluate(() => window.__sent);
+  check('[copilot markup] span message box found, Enter intercepted, placeholders sent', copSent.length === 1 && /\[PERSON_1\]/.test(copSent[0]) && /\[EMAIL_1\]/.test(copSent[0]) && !/John|Doe|john\.doe@/.test(copSent[0]), JSON.stringify(copSent));
+  check('[copilot markup] toast shown', (await readClosedShadowText(cop)).includes('Redacted 2 sensitive items'), await readClosedShadowText(cop));
+  await cop.close();
+
   // The popup's "This page" panel asks the content script what it sees (booleans only, no page content).
   const status = await sw.evaluate(async () => {
     const [tab] = await chrome.tabs.query({ url: 'https://chatgpt.com/*' });
@@ -78,7 +102,7 @@ export default async function gate6({ browser, sw }) {
   const prompt1 = status?.parts?.find((p) => p.part === 'prompt')?.detail;
   check('page status: the content script answers and reports the chat site', prompt1?.site === 'chatgpt.com', JSON.stringify(status));
   check('page status: message box and send button found', prompt1?.messageBox === true && prompt1?.sendButton === true, JSON.stringify(prompt1));
-  check('page status carries no page content (only site name, booleans)', JSON.stringify(status).length < 200 && !/John|Doe|example\.com\//.test(JSON.stringify(status)), JSON.stringify(status));
+  check('page status carries no page content (only site name, booleans)', JSON.stringify(status).length < 600 && !/John|Doe|example\.com\//.test(JSON.stringify(status)), JSON.stringify(status));
   // The real popup panel, pointed at that tab.
   const info = await sw.evaluate(async () => ({ id: chrome.runtime.id, tab: (await chrome.tabs.query({ url: 'https://chatgpt.com/*' }))[0].id }));
   const pop = await browser.newPage();

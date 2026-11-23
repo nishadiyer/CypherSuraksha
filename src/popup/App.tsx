@@ -78,6 +78,25 @@ function Buttons({ json }: { json: string }) {
   );
 }
 
+function WriteDiag({ json }: { json: string }) {
+  let d: { tag: string; editable: boolean; attempts: Array<{ strategy: string; read: number; expected: number; ok: boolean }> } = { tag: '', editable: false, attempts: [] };
+  try {
+    d = JSON.parse(json);
+  } catch {
+    /* ignore */
+  }
+  return (
+    <li class="ml-4 text-[10px] text-slate-500" data-testid="write-diag">
+      The last attempt to edit the message box failed (send a screenshot of this). Box: {d.tag}{d.editable ? ' (editable)' : ''}
+      {d.attempts.map((a, i) => (
+        <div key={i} class="font-mono">
+          {a.strategy}: box then held {a.read} characters, expected {a.expected} {a.ok ? '(ok)' : '(no)'}
+        </div>
+      ))}
+    </li>
+  );
+}
+
 function ThisPage({ page }: { page: PageState }) {
   if (page.kind === 'loading') return <p class="text-xs text-slate-400">Checking this tab…</p>;
   if (page.kind === 'other') return <p class="text-xs text-slate-500">AI Shield does not apply to this page. It works on the supported chat, upload and video-call sites.</p>;
@@ -99,6 +118,7 @@ function ThisPage({ page }: { page: PageState }) {
             d.messageBox || !d.candidates ? null : <Candidates key="c" json={String(d.candidates)} />,
             <Row ok={d.sendButton ? true : 'info'} key="s">Send button: {d.sendButton ? 'found' : 'not on the page yet (many sites only show it after you type)'}</Row>,
             !d.sendButton && d.buttons ? <Buttons key="b" json={String(d.buttons)} /> : null,
+            d.lastWrite ? <WriteDiag key="w" json={String(d.lastWrite)} /> : null,
             <Row ok="info" key="r">Placeholders remembered for this tab: {String(d.remembered ?? 0)}</Row>,
             Number(d.placeholdersRestorable) > 0 ? <Row ok={false} key="pr">{String(d.placeholdersRestorable)} placeholder(s) are still showing on screen and should have been replaced. Tell the developer.</Row> : null,
             Number(d.placeholdersInEditable) > 0 ? <Row ok="info" key="pe">{String(d.placeholdersInEditable)} placeholder(s) sit inside an editable area (for example a document or canvas editor). AI Shield leaves editable text alone on purpose: changing it would make the site think you typed the real value and could save it.</Row> : null,

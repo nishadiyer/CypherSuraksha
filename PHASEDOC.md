@@ -210,7 +210,7 @@ All testing so far used stand-in pages. These leaves wait for real runs on the r
   - _note:_ 2026-11-23 LIVE PASS on real gemini.google.com in the user's Chrome (reported by the user, not machine-verified): popup status showed running, message box + send button found with the shipped selectors; prompt redacted, toast shown, placeholders in history after reload. No code change needed for Gemini.
 - [ ] `P5.1.4` Copilot live interception
   - _acceptance:_ same check on copilot.microsoft.com
-  - _note:_ 2026-11-23 live: Copilot at copilot.com/chat now recognised; popup status showed running but message box NOT found; text box seen = span#m365-chat-editor-target-element[contenteditable=true][role=textbox][aria-label='Message Copilot'] 684x27. Selector added (+ generic role=textbox aria-label^=Message); unit-tested. NOT ticked: needs the live prompt test.
+  - _note:_ 2026-11-23 live on copilot.com/chat: message box now found; the extension refused to send ('could not edit this prompt box') because its edit strategies did not take in Copilot's editor (fail-safe worked: nothing sent unredacted). Added: invisible-character-tolerant comparison, explicit Range selection, delete-then-insert strategy, and a popup diagnostic (per-strategy lengths only) for the next live attempt. NOT ticked.
 - [ ] `P5.1.5` Upload cloaking on a live social site
   - _acceptance:_ on a listed site an uploaded photo arrives cloaked and the badge shows
 - [ ] `P5.1.6` Pill on a live Meet/Zoom/WhatsApp call

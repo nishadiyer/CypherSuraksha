@@ -42,7 +42,8 @@ export function readComposer(el: HTMLElement): string {
   return isTextarea(el) ? el.value : el.innerText ?? el.textContent ?? '';
 }
 
-const norm = (t: string): string => t.replace(/\s+/g, ' ').trim();
+/** Rich-text editors sprinkle zero-width characters and non-breaking spaces into their text: ignore them when comparing. */
+const norm = (t: string): string => t.replace(/[\u200b-\u200d\u2060\ufeff]/g, '').replace(/\s+/g, ' ').trim();
 
 function selectAll(el: HTMLElement): void {
   el.focus();
@@ -53,6 +54,26 @@ function selectAll(el: HTMLElement): void {
   }
 }
 
+/** Selects the editor's contents with an explicit Range (more reliable than execCommand('selectAll') in some editors). */
+function selectContents(el: HTMLElement): void {
+  el.focus();
+  const sel = el.ownerDocument.defaultView?.getSelection();
+  if (!sel) return;
+  const range = el.ownerDocument.createRange();
+  range.selectNodeContents(el);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/** What the last edit attempt did, for the popup's diagnostics: lengths and booleans only, never text. */
+export interface WriteAttempt {
+  strategy: string;
+  read: number;
+  expected: number;
+  ok: boolean;
+}
+export const lastWrite: { tag: string; editable: boolean; attempts: WriteAttempt[] } = { tag: '', editable: false, attempts: [] };
+
 /**
  * Replaces the composer text and returns true only if the editor now holds it.
  * Strategies, in order: native setter (textarea), execCommand insertText (goes
@@ -61,13 +82,21 @@ function selectAll(el: HTMLElement): void {
  */
 export function writeComposer(el: HTMLElement, text: string): boolean {
   const doc = el.ownerDocument;
-  const ok = (): boolean => norm(readComposer(el)) === norm(text);
+  lastWrite.tag = el.tagName.toLowerCase();
+  lastWrite.editable = el.isContentEditable;
+  lastWrite.attempts = [];
+  const check = (strategy: string): boolean => {
+    const read = norm(readComposer(el));
+    const ok = read === norm(text);
+    lastWrite.attempts.push({ strategy, read: read.length, expected: norm(text).length, ok });
+    return ok;
+  };
   el.focus();
   if (isTextarea(el)) {
     // Native setter so React-controlled inputs notice the change.
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(el, text);
     el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-    return ok();
+    return check('textarea-setter');
   }
   try {
     selectAll(el);
@@ -75,7 +104,22 @@ export function writeComposer(el: HTMLElement, text: string): boolean {
   } catch {
     /* fall through */
   }
-  if (ok()) return true;
+  if (check('execCommand-selectAll')) return true;
+  try {
+    selectContents(el);
+    doc.execCommand('insertText', false, text);
+  } catch {
+    /* fall through */
+  }
+  if (check('execCommand-range')) return true;
+  try {
+    selectContents(el);
+    doc.execCommand('delete', false);
+    doc.execCommand('insertText', false, text);
+  } catch {
+    /* fall through */
+  }
+  if (check('delete-then-insert')) return true;
   try {
     selectAll(el);
     const dt = new DataTransfer();
@@ -84,10 +128,10 @@ export function writeComposer(el: HTMLElement, text: string): boolean {
   } catch {
     /* DataTransfer unavailable */
   }
-  if (ok()) return true;
+  if (check('paste')) return true;
   el.textContent = text;
   el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-  return ok();
+  return check('textContent');
 }
 
 /** Real chat apps keep a hidden fallback textarea beside the visible editor: pick the live one. */

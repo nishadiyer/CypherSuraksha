@@ -61,3 +61,24 @@ describe('Copilot adapter', () => {
     expect(findComposer(document, copilot.composer)).toBeNull();
   });
 });
+
+describe('writeComposer robustness', () => {
+  it('accepts an edit when the editor pads its text with zero-width characters (rich-text editors do)', async () => {
+    const { writeComposer, lastWrite } = await import('../src/content/interceptors/promptInterceptor');
+    document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox"></span>';
+    const el = document.getElementById('ed')!;
+    Object.defineProperty(el, 'innerText', { get: () => '​' + (el.textContent ?? '').replace(/ /g, ' ​') + '​', configurable: true });
+    expect(writeComposer(el, 'Hello [PERSON_1] please')).toBe(true);
+    expect(lastWrite.attempts.at(-1)?.ok).toBe(true);
+  });
+  it('returns false when the editor refuses every edit, and records lengths only', async () => {
+    const { writeComposer, lastWrite } = await import('../src/content/interceptors/promptInterceptor');
+    document.body.innerHTML = '<span id="ed" contenteditable="true" role="textbox">original secret text</span>';
+    const el = document.getElementById('ed')!;
+    Object.defineProperty(el, 'innerText', { get: () => 'original secret text', configurable: true }); // always reverts
+    expect(writeComposer(el, 'Hello [PERSON_1]')).toBe(false);
+    expect(lastWrite.attempts.length).toBeGreaterThanOrEqual(4);
+    expect(lastWrite.attempts.every((a) => !a.ok && a.read === 20 && a.expected === 16)).toBe(true);
+    expect(JSON.stringify(lastWrite)).not.toMatch(/secret|PERSON/);
+  });
+});
