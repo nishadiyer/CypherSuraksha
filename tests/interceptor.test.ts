@@ -20,7 +20,8 @@ function setup(deps: Partial<InterceptorDeps> = {}) {
   const off = installPromptInterceptor(window, adapter, all, { sendWaitMs: 50 });
   return { ta, btn, submitted, all, off };
 }
-const tick = (ms = 80) => new Promise((r) => setTimeout(r, ms));
+// the interceptor re-verifies the composer 200 ms after an edit before sending, so wait longer than that
+const tick = (ms = 450) => new Promise((r) => setTimeout(r, ms));
 afterEach(() => (document.body.innerHTML = ''));
 
 describe('prompt interception (Gate 2)', () => {
@@ -53,6 +54,20 @@ describe('prompt interception (Gate 2)', () => {
     expect(all.onError).toHaveBeenCalled();
     btn.click();
     expect(submitted).toEqual(['Ada']);
+    off();
+  });
+
+  it('never sends when the editor quietly undoes the redaction after the first check', async () => {
+    const { ta, btn, submitted, all, off } = setup();
+    // A controlled editor: accepts the edit, then restores its own state a moment later.
+    const proto = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!;
+    ta.value = 'Ada here';
+    const original = ta.value;
+    ta.addEventListener('input', () => setTimeout(() => proto.set!.call(ta, original), 60));
+    btn.click();
+    await tick();
+    expect(submitted).toEqual([]); // the original text was NOT sent
+    expect(all.onError).toHaveBeenCalled();
     off();
   });
 

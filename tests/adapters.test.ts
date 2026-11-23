@@ -77,8 +77,9 @@ describe('writeComposer robustness', () => {
     const el = document.getElementById('ed')!;
     Object.defineProperty(el, 'innerText', { get: () => 'original secret text', configurable: true }); // always reverts
     expect(writeComposer(el, 'Hello [PERSON_1]')).toBe(false);
-    expect(lastWrite.attempts.length).toBeGreaterThanOrEqual(4);
-    expect(lastWrite.attempts.every((a) => !a.ok && a.read === 20 && a.expected === 16)).toBe(true);
+    expect(lastWrite.attempts.length).toBeGreaterThanOrEqual(6);
+    expect(lastWrite.attempts.every((a) => !a.ok && a.read === 20 && (a.expected === 16 || a.expected === 0))).toBe(true); // 0 = "is it empty?" checks
+    expect(lastWrite.attempts.some((a) => a.expected === 0)).toBe(true);
     expect(JSON.stringify(lastWrite)).not.toMatch(/secret|PERSON/);
   });
 });

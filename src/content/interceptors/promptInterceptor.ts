@@ -65,6 +65,18 @@ function selectContents(el: HTMLElement): void {
   sel.addRange(range);
 }
 
+/** Collapses the selection to the end of the editor (a plain caret, like a user who clicked at the end of the text). */
+function caretToEnd(el: HTMLElement): void {
+  el.focus();
+  const sel = el.ownerDocument.defaultView?.getSelection();
+  if (!sel) return;
+  const range = el.ownerDocument.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 /** What the last edit attempt did, for the popup's diagnostics: lengths and booleans only, never text. */
 export interface WriteAttempt {
   strategy: string;
@@ -112,14 +124,48 @@ export function writeComposer(el: HTMLElement, text: string): boolean {
     /* fall through */
   }
   if (check('execCommand-range')) return true;
+  // Controlled editors (Copilot, Slate, some Lexical setups) keep their own copy of the text and ignore a programmatic
+  // select-and-replace, but accept what a user does at a plain caret: backspace, then type. So: empty the box first and
+  // only insert once it is verified empty (a failed attempt must not leave old + new text appended together).
+  const empty = (strategy: string): boolean => {
+    const read = norm(readComposer(el));
+    lastWrite.attempts.push({ strategy, read: read.length, expected: 0, ok: read === '' });
+    return read === '';
+  };
+  const insertWhenEmpty = (name: string): boolean => {
+    try {
+      doc.execCommand('insertText', false, text);
+    } catch {
+      /* fall through */
+    }
+    return check(name);
+  };
   try {
-    selectContents(el);
+    selectAll(el);
     doc.execCommand('delete', false);
-    doc.execCommand('insertText', false, text);
   } catch {
     /* fall through */
   }
-  if (check('delete-then-insert')) return true;
+  if (empty('selectAll-delete') && insertWhenEmpty('selectAll-delete-insert')) return true;
+  try {
+    caretToEnd(el);
+    for (let i = 0, n = readComposer(el).length + 8; i < n && norm(readComposer(el)) !== ''; i++) doc.execCommand('delete', false);
+  } catch {
+    /* fall through */
+  }
+  if (empty('caret-backspace-all') && insertWhenEmpty('caret-backspace-insert')) return true;
+  try {
+    el.focus();
+    const key = (k: string, mods: KeyboardEventInit = {}): void => {
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k, bubbles: true, cancelable: true, ...mods }));
+    };
+    key('a', { ctrlKey: true });
+    key('a', { metaKey: true });
+    key('Backspace');
+  } catch {
+    /* fall through */
+  }
+  if (empty('keyboard-select-all-backspace') && insertWhenEmpty('keyboard-insert')) return true;
   try {
     selectAll(el);
     const dt = new DataTransfer();
@@ -187,6 +233,13 @@ export function installPromptInterceptor(win: Window, adapter: SiteAdapter, deps
             if (!writeComposer(composer, out.redactedText)) {
               // The editor refused the swap: never send the original.
               deps.onError('AI Shield could not edit this prompt box, so nothing was sent. Remove the sensitive text and try again.');
+              return;
+            }
+            // Some editors quietly undo a programmatic edit a moment later. Never send unless the box STILL holds the
+            // redacted text after they have had a chance to.
+            await new Promise((r) => setTimeout(r, 200));
+            if (norm(readComposer(composer)) !== norm(out.redactedText)) {
+              deps.onError('AI Shield could not keep the redacted text in this prompt box, so nothing was sent. Remove the sensitive text and try again.');
               return;
             }
             deps.onRedacted(out.count, out.map);
