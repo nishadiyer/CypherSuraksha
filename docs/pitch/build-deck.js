@@ -193,7 +193,7 @@ async function icon(name, color) {
     s.addText('Future implementations', { placeholder: 'title' });
     const f = [['chip', AMBER, 'Our own cloaking models', 'Train models built for cloaking, so photos resist more face-recognition systems and cloak faster.'],
       ['globe', BLUE, 'Works on any website', 'Detect chat boxes and uploads automatically, so protection works everywhere, not only on sites we hand-coded.'],
-      ['doc', GREEN, 'Terms and conditions scanner', 'Search a site\'s terms and conditions for bad clauses, like data selling or training on your content, and warn you.'],
+      ['doc', GREEN, 'More security features', 'Add new protections over time. For example, a terms and conditions checker that searches a site\'s terms for bad clauses, like data selling, and warns you.'],
       ['store', TEAL, 'Publish on the Chrome Web Store', 'Ship a real extension so everyone can install it in one click.']];
     for (let i = 0; i < 4; i++) {
       const col = i % 2, row = Math.floor(i / 2), x = M + col * 6.2, y = 1.55 + row * 2.55, [ic, c, h, d] = f[i];
@@ -202,7 +202,7 @@ async function icon(name, color) {
       txt(s, h, { x: x + 1.4, y: y + 0.3, w: 4.2, h: 0.55, fontSize: 20, bold: true, valign: 'middle' });
       txt(s, d, { x: x + 1.4, y: y + 0.95, w: 4.2, h: 1.2, fontSize: 15, color: MUTED, valign: 'top' });
     }
-    s.addNotes('Today our cloak targets FaceNet-style recognisers and our chat-site support relies on hand-written selectors. The roadmap fixes both, adds a terms-and-conditions scanner, and gets us onto the Chrome Web Store.');
+    s.addNotes('Today our cloak targets FaceNet-style recognisers and our chat-site support relies on hand-written selectors. The roadmap fixes both, adds more security features (for example a terms-and-conditions checker), and gets us onto the Chrome Web Store.');
   }
 
   // ---------- 9. Closing ----------
