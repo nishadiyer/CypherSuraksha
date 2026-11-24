@@ -1,4 +1,4 @@
-# AI Shield — architecture
+# CypherSuraksha — architecture
 
 Three tiers, connected only by Chrome messaging. Box colour on the diagram is live task state: **grey** untouched, **amber** in progress, **green** done and verified.
 

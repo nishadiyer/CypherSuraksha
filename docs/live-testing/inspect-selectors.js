@@ -28,7 +28,7 @@
   out.send = { selector: sel.send, matches: send.length, elements: send.slice(0, 3).map(attrs) };
   const root = (comp[0] || document.body).closest('form, [role="form"], main, section') || document.body;
   out.nearbyButtons = [...root.querySelectorAll('button, [role="button"]')].slice(0, 14).map(attrs);
-  // Is the AI Shield content script present? Its toast/pill live in closed shadow roots, so look for its host elements.
+  // Is the CypherSuraksha content script present? Its toast/pill live in closed shadow roots, so look for its host elements.
   out.extension = { hostElementsInBody: [...document.documentElement.children].filter((e) => e.tagName.includes('-') || e.id?.startsWith?.('ai-shield')).length };
   const text = JSON.stringify(out, null, 2);
   try { copy(text); } catch (e) { /* copy() only exists in DevTools */ }

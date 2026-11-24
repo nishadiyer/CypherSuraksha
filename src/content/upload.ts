@@ -7,7 +7,7 @@ import { uploadStats } from './interceptors/uploadInterceptor';
 import { deepQuery, onTestNotification, registerPageStatus } from './status';
 import { showToast } from './ui/Toast';
 
-onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
+onTestNotification(() => showToast('CypherSuraksha test: notifications show on this page'));
 registerPageStatus('upload', () => ({
   fileInputs: [...deepQuery(document, 'input[type=file]')].length, // includes ones inside open web components
   components: uploadStats.shadowRoots,

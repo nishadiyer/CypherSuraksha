@@ -1,4 +1,4 @@
-# AI Shield
+# CypherSuraksha
 
 A Chrome Manifest V3 extension that protects everyday users, students and families from AI-driven threats. **Everything runs on your device. Nothing is uploaded.**
 
@@ -48,7 +48,7 @@ npm install
 npm run build          # tsc --noEmit, vite build, manifest/CSP gate
 npm run audit:final    # static audit (console leaks, dispose wiring, network & storage invariants)
 npm test               # unit tests
-npm run package        # build + zip to release/ai-shield-<version>.zip for the Chrome Web Store
+npm run package        # build + zip to release/cypher-suraksha-<version>.zip for the Chrome Web Store
 ```
 
 Open `chrome://extensions`, enable Developer mode, **Load unpacked**, choose `dist/`.
@@ -57,7 +57,7 @@ Open `chrome://extensions`, enable Developer mode, **Load unpacked**, choose `di
 
 ## Demo
 
-To show AI Shield catching an AI-generated or swapped face on stage, see [docs/DEMO.md](docs/DEMO.md) (a local demo page plus a separate demo build).
+To show CypherSuraksha catching an AI-generated or swapped face on stage, see [docs/DEMO.md](docs/DEMO.md) (a local demo page plus a separate demo build).
 
 ## Privacy
 

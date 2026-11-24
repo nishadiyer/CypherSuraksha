@@ -11,7 +11,7 @@ if (!existsSync(root + 'PRIVACY.md') || statSync(root + 'PRIVACY.md').size === 0
 
 const { version } = JSON.parse(readFileSync(root + 'dist/manifest.json', 'utf8'));
 mkdirSync(root + 'release', { recursive: true });
-const out = `${root}release/ai-shield-${version}.zip`;
+const out = `${root}release/cypher-suraksha-${version}.zip`;
 rmSync(out, { force: true });
 // -X: no extra file attributes; exclude Vite's internal build manifest.
 execFileSync('zip', ['-r', '-q', '-X', out, '.', '-x', '.vite/*', '*.DS_Store'], { cwd: root + 'dist' });

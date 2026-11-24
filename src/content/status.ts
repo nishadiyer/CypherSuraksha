@@ -1,7 +1,7 @@
 import type { PageStatus } from '../shared/messages';
 
 /**
- * Lets the popup ask "is AI Shield running on this tab, and what does it see?". Only the extension's own pages
+ * Lets the popup ask "is CypherSuraksha running on this tab, and what does it see?". Only the extension's own pages
  * can ask (the page itself cannot), and the answer carries no page content: only booleans and counts.
  *
  * Several content scripts can run in one tab (for example upload + video on WhatsApp Web) and share one isolated

@@ -6,7 +6,7 @@ import { buttonCandidates, editableCandidates, onTestNotification, registerPageS
 
 const adapter = adapterFor(location.hostname);
 
-onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
+onTestNotification(() => showToast('CypherSuraksha test: notifications show on this page'));
 
 if (adapter) {
   const restorer = installRestorer(document);

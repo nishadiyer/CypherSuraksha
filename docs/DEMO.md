@@ -1,4 +1,4 @@
-# Live demo: show AI Shield catching an AI-generated or swapped face
+# Live demo: show CypherSuraksha catching an AI-generated or swapped face
 
 A local page plays a still picture as if it were a participant on a video call, so you can watch the pill react in front of an audience. **It is a demo, not a test of real calls**: real calls are live video, and live webcam video behaves differently from still pictures (see "What to say honestly").
 
@@ -9,13 +9,13 @@ npm run fixtures        # downloads the sample pictures (public research dataset
 npm run demo:prepare    # copies the three demo pictures into demo/media/
 npm run build:demo      # builds a separate DEMO extension into dist-demo/ (adds http://localhost; the shipping build never has it)
 ```
-Then in Chrome: `chrome://extensions` → turn off or remove the normal **AI Shield** → **Load unpacked** → choose **`dist-demo/`** (its name ends with "(DEMO build)"). Keep only one AI Shield enabled.
+Then in Chrome: `chrome://extensions` → turn off or remove the normal **CypherSuraksha** → **Load unpacked** → choose **`dist-demo/`** (its name ends with "(DEMO build)"). Keep only one CypherSuraksha enabled.
 
-The demo page is already served by PM2 as `ai-shield-demo`: **http://localhost:4186/** (`pm2 ls` to check; `pm2 restart ai-shield-demo` if needed).
+The demo page is already served by PM2 as `cypher-suraksha-demo`: **http://localhost:4186/** (`pm2 ls` to check; `pm2 restart cypher-suraksha-demo` if needed).
 
 ## Running it
 
-| Click | What AI Shield should do | Why |
+| Click | What CypherSuraksha should do | Why |
 |---|---|---|
 | **Real person** | Green pill **"No fake found"** | Both detectors read it as 0% |
 | **AI-generated face** | Pill turns **red "Fake?"** after about 10 to 20 s, then the warning **"This video may be AI-generated"** | The main model reads fully AI-generated faces at about 99.7% |
@@ -24,7 +24,7 @@ The demo page is already served by PM2 as `ai-shield-demo`: **http://localhost:4
 
 Tips:
 - **Hover the pill** to show the numbers: smoothed score, main model, face-swap detector, backend and frames per second.
-- Open the AI Shield popup: **This page** shows "Latest reading", and the **Face-swap detector (experimental)** switch is under Shields.
+- Open the CypherSuraksha popup: **This page** shows "Latest reading", and the **Face-swap detector (experimental)** switch is under Shields.
 - Switch modes on a **fresh tab** if you want a clean reading: the pill smooths over the last 5 frames, so it takes a few seconds to change.
 - The first reading after loading takes longer while models load.
 

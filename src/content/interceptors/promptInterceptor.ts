@@ -285,21 +285,21 @@ export function installPromptInterceptor(win: Window, adapter: SiteAdapter, deps
           if (out.redactedText !== undefined && out.count > 0) {
             if (!(await writeComposer(composer, out.redactedText, original))) {
               // The editor refused the swap: never send the original.
-              deps.onError('AI Shield could not edit this prompt box, so nothing was sent. Remove the sensitive text and try again.');
+              deps.onError('CypherSuraksha could not edit this prompt box, so nothing was sent. Remove the sensitive text and try again.');
               return;
             }
             // Some editors quietly undo a programmatic edit a moment later. Never send unless the box STILL holds the
             // redacted text after they have had a chance to.
             await new Promise((r) => setTimeout(r, 200));
             if (norm(readComposer(composer)) !== norm(out.redactedText)) {
-              deps.onError('AI Shield could not keep the redacted text in this prompt box, so nothing was sent. Remove the sensitive text and try again.');
+              deps.onError('CypherSuraksha could not keep the redacted text in this prompt box, so nothing was sent. Remove the sensitive text and try again.');
               return;
             }
             deps.onRedacted(out.count, out.map);
           }
         } catch {
           overrideUntil = Date.now() + 15_000;
-          deps.onError('AI Shield could not check this prompt, so it was not sent. Press send again to send it unprotected.');
+          deps.onError('CypherSuraksha could not check this prompt, so it was not sent. Press send again to send it unprotected.');
           return;
         }
       }
@@ -480,7 +480,7 @@ export function installRestorer(doc: Document, initial: EntityMap = {}): Restore
 }
 
 /**
- * Diagnostics for the popup: how many placeholders are on the page right now, split into ones AI Shield can restore and
+ * Diagnostics for the popup: how many placeholders are on the page right now, split into ones CypherSuraksha can restore and
  * ones inside editable areas (which it deliberately never rewrites: editing a page's own editor text would make the
  * site think you typed the real value and could save it). Counts only; no text leaves this function.
  */

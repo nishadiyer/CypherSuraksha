@@ -47,12 +47,12 @@ export async function addKeyword(keyword: string): Promise<Vault> {
   return next;
 }
 
-/* ---------- "This page": is AI Shield running on the current tab, and what does it see? ---------- */
+/* ---------- "This page": is CypherSuraksha running on the current tab, and what does it see? ---------- */
 import type { PageStatus } from '../shared/messages';
 
 export type PageState =
   | { kind: 'loading' }
-  | { kind: 'other' } // a page AI Shield does not apply to
+  | { kind: 'other' } // a page CypherSuraksha does not apply to
   | { kind: 'inactive'; host: string } // a supported site, but the content script did not answer
   | { kind: 'active'; host: string; status: PageStatus };
 

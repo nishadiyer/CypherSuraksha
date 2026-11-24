@@ -6,6 +6,8 @@ export interface Settings {
   /** Experimental face-swap detector (needs the optional 609 MB model and a real GPU). Off by default: it flagged a real webcam as AI-generated in live testing. */
   faceSwap: boolean;
   allowlist: string[];
+  /** popup theme; unset = follow the system */
+  theme?: 'light' | 'dark';
 }
 
 export const DEFAULT_SETTINGS: Settings = {

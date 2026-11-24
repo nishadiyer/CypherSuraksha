@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Shield demo</title>
+<title>CypherSuraksha demo</title>
 <style>
   :root { color-scheme: dark; }
   body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #0f1115; color: #e6e8ee; }
@@ -21,8 +21,8 @@
   #msg { color: #ffb4a8; }
 </style>
 <main>
-  <h1>🛡️ AI Shield — live demo</h1>
-  <p>This page plays a still picture as if it were a participant on a video call, so you can watch AI Shield's pill react. It is a <b>demo only</b>: real calls are live video.</p>
+  <h1>🛡️ CypherSuraksha — live demo</h1>
+  <p>This page plays a still picture as if it were a participant on a video call, so you can watch CypherSuraksha's pill react. It is a <b>demo only</b>: real calls are live video.</p>
   <div id="stage"><video id="v" autoplay muted playsinline></video></div>
   <div class="row">
     <button data-mode="real" aria-pressed="true">Real person</button>
@@ -32,7 +32,7 @@
   </div>
   <div id="expect"></div>
   <p id="msg"></p>
-  <p class="small">Needs the AI Shield <b>demo build</b> loaded in Chrome (<code>npm run build:demo</code>, load <code>dist-demo/</code>). The pill appears on the video within about 10–20 seconds. Sample pictures come from public research datasets and are not part of the repository.</p>
+  <p class="small">Needs the CypherSuraksha <b>demo build</b> loaded in Chrome (<code>npm run build:demo</code>, load <code>dist-demo/</code>). The pill appears on the video within about 10–20 seconds. Sample pictures come from public research datasets and are not part of the repository.</p>
 </main>
 <script>
   const W = 640, H = 360;
@@ -45,7 +45,7 @@
   const EXPECT = {
     real: '<b>Expected:</b> a green <b>“No fake found”</b> pill. (A green pill never proves someone is real.)',
     ai: '<b>Expected:</b> the pill turns <b>red</b> after roughly 10–20 seconds, then the warning <b>“This video may be AI-generated”</b> appears. The main model reads fully AI-generated faces well.',
-    swap: '<b>Expected:</b> usually a <b>green</b> pill, because the main model cannot see face-swaps. Turn on <b>Face-swap detector (experimental)</b> in the AI Shield popup (needs a real GPU and the optional model) and it shows <b>amber “Unsure”</b>. It is never red for a swap, by design: that detector is experimental and once flagged a real webcam.',
+    swap: '<b>Expected:</b> usually a <b>green</b> pill, because the main model cannot see face-swaps. Turn on <b>Face-swap detector (experimental)</b> in the CypherSuraksha popup (needs a real GPU and the optional model) and it shows <b>amber “Unsure”</b>. It is never red for a swap, by design: that detector is experimental and once flagged a real webcam.',
     mine: '<b>Your own file:</b> the pill follows whatever the models make of it. Red means the main model thinks it is fully AI-generated; amber means unsure.',
   };
   const images = {};

@@ -1,6 +1,6 @@
-# AI Shield — plan of record
+# CypherSuraksha — plan of record
 
-Internal, builders-facing. Tracks what is done, what is actually proven, and what is still open for the AI Shield browser extension. The live task tree is in `BUILDPLAN.md` (generated) and in the cockpit.
+Internal, builders-facing. Tracks what is done, what is actually proven, and what is still open for the CypherSuraksha browser extension. The live task tree is in `BUILDPLAN.md` (generated) and in the cockpit.
 
 > **Retrospective seeding.** Phases P0–P4 were built before this phasedoc existed. They were seeded afterwards; tick dates for them are the seeding date, and every tick records only a test that was re-run at seeding time.
 

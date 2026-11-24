@@ -9,8 +9,9 @@ export default async function gate5({ browser, sw }) {
   console.log('Gate 5 — popup: toggles, hashed vault, allowlist, ledger (real UI, real Web Crypto)');
   const id = new URL(sw.url()).host;
   const popup = await browser.newPage();
-  await popup.goto(`chrome-extension://${id}/src/popup/index.html`);
-  await popup.waitForSelector('h1');
+  // the popup has tabs (Shield, Page, Vault, Sites); ?view= opens one directly
+  const go = async (view) => { await popup.goto(`chrome-extension://${id}/src/popup/index.html?view=${view}`); await popup.waitForSelector('.cs-root'); };
+  await go('vault');
   const type = async (sel, text) => { await popup.click(sel, { clickCount: 3 }); await popup.type(sel, text); };
 
   await type('input[placeholder^="Name"]', 'Project Bluebird');
@@ -29,6 +30,7 @@ export default async function gate5({ browser, sw }) {
 
   // Per-pillar toggle (Privacy is the first switch after the master switch).
   await popup.bringToFront();
+  await go('shield');
   const toggles = await popup.$$('[role=switch]');
   check('master + 3 pillar switches + experimental face-swap switch rendered', toggles.length === 5, String(toggles.length));
   const fs0 = await sw.evaluate(async () => (await chrome.storage.local.get('settings')).settings?.faceSwap ?? false);
@@ -55,26 +57,27 @@ export default async function gate5({ browser, sw }) {
 
   // Allowlist.
   await popup.bringToFront();
+  await go('sites');
   await type('input[placeholder="example.com"]', 'https://chatgpt.com/foo');
-  await popup.click('section:last-of-type form button');
+  await popup.click('[data-testid=sites-form] button');
   await sleep(400);
   const al = await sw.evaluate(async () => (await chrome.storage.local.get('settings')).settings.allowlist);
   check('allowlist normalises URLs to hostnames', al.includes('chatgpt.com'), JSON.stringify(al));
   s = await send('Mail ada@example.com');
   check('trusted site -> shields stand down', s === 'Mail ada@example.com', s);
-  await popup.bringToFront(); await popup.reload(); await popup.waitForSelector('h1');
-  await popup.waitForSelector('section:last-of-type ul button', { timeout: 5000 });
-  await popup.click(`section:last-of-type ul li:has(span) button[aria-label="Remove chatgpt.com"]`); await sleep(400);
+  await popup.bringToFront(); await go('sites');
+  await popup.waitForSelector('button[aria-label="Remove chatgpt.com"]', { timeout: 5000 });
+  await popup.click('button[aria-label="Remove chatgpt.com"]'); await sleep(400);
   s = await send('Mail ada@example.com');
   check('removing the trusted site re-enables shields', s === 'Mail [EMAIL_1]', s);
 
   // Ledger display.
-  await popup.bringToFront(); await popup.reload(); await popup.waitForSelector('h1'); await sleep(300);
+  await popup.bringToFront(); await go('shield'); await sleep(300);
   const shown = await popup.$eval('[data-testid=promptsRedacted]', (e) => Number(e.textContent));
   const stored = await sw.evaluate(async () => (await chrome.storage.local.get('ledger')).ledger.promptsRedacted);
   check('ledger in popup matches chrome.storage.local counters', shown === stored && stored >= 3, `${shown} vs ${stored}`);
   // Remove all Never-share keywords (only hashes are stored, so they cannot be removed one by one).
-  await popup.bringToFront(); await popup.reload(); await popup.waitForSelector('h1'); await sleep(300);
+  await popup.bringToFront(); await go('vault'); await sleep(300);
   const clickByText = (re) => popup.evaluate((src) => [...document.querySelectorAll('button')].find((b) => new RegExp(src, 'i').test(b.textContent))?.click(), re.source);
   await clickByText(/remove all keywords/); await sleep(200);
   const stillThere = await sw.evaluate(async () => (await chrome.storage.local.get('vault')).vault);

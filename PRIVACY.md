@@ -1,8 +1,8 @@
-# AI Shield — Privacy Policy
+# CypherSuraksha — Privacy Policy
 
 _Last updated: 2026-11-22_
 
-AI Shield processes everything on your device. **It collects no data, sends nothing anywhere, and has no servers, accounts, analytics or telemetry.**
+CypherSuraksha processes everything on your device. **It collects no data, sends nothing anywhere, and has no servers, accounts, analytics or telemetry.**
 
 ## What the extension does with your data
 | Data | Handling |

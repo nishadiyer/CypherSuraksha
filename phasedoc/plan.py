@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Shield phasedoc: task database + CLI. Single file, standard library only.
+"""CypherSuraksha phasedoc: task database + CLI. Single file, standard library only.
 
 Verbs: init | tick <id> | part <id> | note <id> <text> | add | tree | components | mirror
 A leaf is ticked ONLY after its acceptance test has actually been run.
@@ -12,7 +12,7 @@ DB = Path(os.environ.get("PD_DB", HERE / "plan.db"))
 MIRROR = Path(os.environ.get("PD_MIRROR", HERE / "BUILDPLAN.md"))
 SHARE = Path(os.environ.get("PD_SHARE", HERE.parent / "PHASEDOC.md"))  # single shareable file for GitHub
 LOG = Path(os.environ.get("PD_PROGRESS_LOG", HERE / "PROGRESS.log"))
-TITLE = os.environ.get("PD_TITLE", "AI Shield")
+TITLE = os.environ.get("PD_TITLE", "CypherSuraksha")
 
 # (id, parent, title, acceptance, component). Parents have empty acceptance.
 # Component keys are lowercase letters only and match SVG ids "comp-<key>" in ARCHITECTURE.md.

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Shield \u2014 Privacy, Pixels, People",
+  "name": "CypherSuraksha \u2014 Privacy, Pixels, People",
   "version": "1.0.0",
   "description": "Local-only protection from AI-driven threats: redacts personal data from AI prompts, cloaks photos, and flags deepfake video calls. Nothing leaves your browser.",
   "minimum_chrome_version": "116",
@@ -85,7 +85,7 @@
   ],
   "action": {
     "default_popup": "src/popup/index.html",
-    "default_title": "AI Shield",
+    "default_title": "CypherSuraksha",
     "default_icon": {
       "16": "src/assets/icons/icon16.png",
       "32": "src/assets/icons/icon32.png",

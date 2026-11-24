@@ -5,7 +5,7 @@ import { onTestNotification, registerPageStatus } from './status';
 import { showToast } from './ui/Toast';
 import { removePill, updatePill } from './ui/PeopleUI';
 
-onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
+onTestNotification(() => showToast('CypherSuraksha test: notifications show on this page'));
 let last: { r: PeopleResult; fps: number } | undefined;
 const pct = (v: number | undefined): number => (typeof v === 'number' ? Math.round(v * 100) : -1);
 registerPageStatus('video', () => ({

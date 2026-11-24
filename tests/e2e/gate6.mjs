@@ -106,14 +106,14 @@ export default async function gate6({ browser, sw }) {
   // The real popup panel, pointed at that tab.
   const info = await sw.evaluate(async () => ({ id: chrome.runtime.id, tab: (await chrome.tabs.query({ url: 'https://chatgpt.com/*' }))[0].id }));
   const pop = await browser.newPage();
-  await pop.goto(`chrome-extension://${info.id}/src/popup/index.html?tabId=${info.tab}`);
+  await pop.goto(`chrome-extension://${info.id}/src/popup/index.html?view=page&tabId=${info.tab}`);
   await pop.waitForSelector('[data-testid=page-active], [data-testid=page-inactive]', { timeout: 8000 }).catch(() => null);
   const txt = await pop.evaluate(() => document.body.innerText);
-  check('popup "This page" says AI Shield is running and found the message box', /AI chat detected \(chatgpt\.com\)/.test(txt) && /Message box: found/.test(txt) && /Send button: found/.test(txt), txt.slice(0, 300));
+  check('popup "This page" says CypherSuraksha is running and found the message box', /AI chat detected \(chatgpt\.com\)/.test(txt) && /Message box: found/.test(txt) && /Send button: found/.test(txt), txt.slice(0, 300));
   // The popup's "Show a test notification" button: the toast appears on the page, in the browser's top layer.
   await pop.evaluate(() => [...document.querySelectorAll('button')].find((b) => /test notification/i.test(b.textContent))?.click());
   await sleep(700);
-  check('test notification: the toast appears on the page', (await readClosedShadowText(page)).includes('AI Shield test'), await readClosedShadowText(page));
+  check('test notification: the toast appears on the page', (await readClosedShadowText(page)).includes('CypherSuraksha test'), await readClosedShadowText(page));
   check('toast host is in the top layer (above any page stacking)', await page.evaluate(() => [...document.documentElement.children].some((e) => e.matches(':popover-open'))));
   await pop.close();
   await page.close();
@@ -128,7 +128,7 @@ export default async function gate6({ browser, sw }) {
   const d = oddInfo.status?.parts?.find((p) => p.part === 'prompt')?.detail;
   check('page status: a message box the selector misses is reported as not found, with candidates', d?.messageBox === false && /div#new-editor/.test(String(d?.candidates)), JSON.stringify(d));
   const pop2 = await browser.newPage();
-  await pop2.goto(`chrome-extension://${info.id}/src/popup/index.html?tabId=${oddInfo.tab}`);
+  await pop2.goto(`chrome-extension://${info.id}/src/popup/index.html?view=page&tabId=${oddInfo.tab}`);
   await pop2.waitForSelector('[data-testid=candidates]', { timeout: 8000 }).catch(() => null);
   const txt2 = await pop2.evaluate(() => document.body.innerText);
   check('popup shows "NOT found" and lists the text box it saw', /Message box: NOT found/.test(txt2) && /div#new-editor/.test(txt2), txt2.slice(0, 400));
