@@ -30,6 +30,7 @@ async function icon(name, color) {
   return 'image/png;base64,' + (await sharp(Buffer.from(svg)).png().toBuffer()).toString('base64');
 }
 
+const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultraface.onnx','people-deepfake.int8.onnx','people-deepfake.fp32.onnx','privacy-ner.int8.onnx','cloak-facenet-casia.onnx','cloak-facenet-vggface2.onnx','people-gend.fp16.onnx']) MB[f] = fs.statSync('/Users/nishadiyer/Desktop/Projects/CypherSuraksha/CypherKaavach/dist-demo/models/' + f).size / 1e6;
 (async () => {
   const pres = new pptxgen();
   pres.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5
@@ -49,6 +50,8 @@ async function icon(name, color) {
   pres.defineSlideMaster({ ...frame('CS_CONTENT'),
     objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 0.45, w: W - 2 * M, h: 0.9, fontFace: 'Arial', fontSize: 38, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
   pres.defineSlideMaster({ ...frame('CS_TITLE'),
+    objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 1.0, w: 8, h: 1.0, fontFace: 'Arial', fontSize: 54, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
+  pres.defineSlideMaster({ ...frame('CS_CLOSE'),
     objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 2.35, w: 7.4, h: 1.2, fontFace: 'Arial', fontSize: 60, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
 
   pres.addSection({ title: 'CypherSuraksha pitch' });
@@ -64,56 +67,61 @@ async function icon(name, color) {
     txt(s, label, { x, y, w, h: 0.4, fontSize: 13, bold: true, color, align: 'center', valign: 'middle' });
   };
 
-  // ---------- 1. Title ----------
+  // ---------- 1. Title + team ----------
   {
     const s = mk('CS_TITLE');
-    txt(s, 'ON-DEVICE AI PRIVACY ARMOR', { x: M, y: 1.75, w: 7, h: 0.4, fontSize: 14, bold: true, color: TEAL, charSpacing: 4 });
+    txt(s, 'ON-DEVICE AI PRIVACY ARMOR', { x: M, y: 0.6, w: 7, h: 0.35, fontSize: 14, bold: true, color: TEAL, charSpacing: 4 });
     s.addText('CypherSuraksha', { placeholder: 'title' });
-    txt(s, 'Stops private details reaching AI chatbots, cloaks your photos, and flags AI-generated faces on video calls. Nothing ever leaves your device.', { x: M, y: 3.7, w: 6.9, h: 1.1, fontSize: 18, color: MUTED, valign: 'top' });
-    chip(s, M, 5.15, 1.6, 'PromptGuard', AMBER); chip(s, M + 1.75, 5.15, 1.6, 'Pixel Cloak', BLUE); chip(s, M + 3.5, 5.15, 1.6, 'TruthLens', GREEN);
-    // ring motif, same as the popup hero
-    const cx = 10.1, cy = 3.55;
-    [[3.5, LINE, 2], [2.7, TEAL, 3], [1.9, BLUE, 2]].forEach(([d, c, w], i) => s.addShape(pres.ShapeType.ellipse, { x: cx - d / 2, y: cy - d / 2, w: d, h: d, fill: { color: BG, transparency: 100 }, line: { color: c, width: w, dashType: i === 2 ? 'dash' : 'solid', transparency: i === 0 ? 0 : 20 }, objectName: 'ring ' + i }));
-    s.addShape(pres.ShapeType.ellipse, { x: cx - 0.9, y: cy - 0.9, w: 1.8, h: 1.8, fill: { color: CARD }, line: { color: LINE, width: 1 }, objectName: 'ring core' });
-    s.addImage({ data: await icon('shield', TEAL), x: cx - 0.55, y: cy - 0.55, w: 1.1, h: 1.1, altText: 'shield', objectName: 'ring shield' });
-    s.addNotes('Welcome. CypherSuraksha is a Chrome extension that protects people from three AI-driven threats, entirely on their own device.');
-  }
-
-  // ---------- 2. Problem ----------
-  {
-    const s = mk('CS_CONTENT');
-    s.addText('The problem', { placeholder: 'title' });
-    txt(s, 'AI is everywhere, and three everyday habits quietly leak who you are.', { x: M, y: 1.35, w: 11, h: 0.5, fontSize: 18, color: MUTED });
-    const items = [['leak', AMBER, 'You paste real details into AI chats', 'Names, emails, ID numbers and keys end up in a third party\'s logs, and sometimes its training data.'],
-      ['eye', BLUE, 'Your photos feed face recognition', 'A selfie posted anywhere can be scraped and matched to you, and it carries hidden location data.'],
-      ['phone', GREEN, 'Faces on video calls can be fake', 'Scammers use AI-generated faces to impersonate relatives and colleagues. Nothing on screen warns you.']];
-    for (let i = 0; i < 3; i++) {
-      const x = M + i * 4.14, [ic, col, h, d] = items[i];
-      card(s, x, 2.2, 3.84, 3.9, 'problem card ' + (i + 1));
-      await badge(s, x + 0.3, 2.5, 0.85, ic, col, 'problem ' + (i + 1));
-      txt(s, h, { x: x + 0.3, y: 3.6, w: 3.24, h: 0.9, fontSize: 20, bold: true, valign: 'top' });
-      txt(s, d, { x: x + 0.3, y: 4.55, w: 3.24, h: 1.4, fontSize: 15, color: MUTED, valign: 'top' });
-    }
-    s.addNotes('Three problems: oversharing in AI chats, photos used for face recognition, and deepfake faces on calls. Most people have no tool for any of them.');
-  }
-
-  // ---------- 3. Team ----------
-  {
-    const s = mk('CS_CONTENT');
-    s.addText('Meet the team', { placeholder: 'title' });
+    txt(s, 'Stops private details reaching AI chatbots, cloaks your photos, and flags AI-generated faces on video calls. Nothing ever leaves your device.', { x: M, y: 2.15, w: 7.2, h: 0.95, fontSize: 17, color: MUTED, valign: 'top' });
+    chip(s, M, 3.3, 1.6, 'PromptGuard', AMBER); chip(s, M + 1.75, 3.3, 1.6, 'Pixel Cloak', BLUE); chip(s, M + 3.5, 3.3, 1.6, 'TruthLens', GREEN);
+    const cx = 10.6, cy = 2.1;
+    [[3.1, LINE, 2], [2.4, TEAL, 3], [1.7, BLUE, 2]].forEach(([d, c, w], i) => s.addShape(pres.ShapeType.ellipse, { x: cx - d / 2, y: cy - d / 2, w: d, h: d, fill: { color: BG, transparency: 100 }, line: { color: c, width: w, dashType: i === 2 ? 'dash' : 'solid', transparency: i === 0 ? 0 : 20 }, objectName: 'ring ' + i }));
+    s.addShape(pres.ShapeType.ellipse, { x: cx - 0.75, y: cy - 0.75, w: 1.5, h: 1.5, fill: { color: CARD }, line: { color: LINE, width: 1 }, objectName: 'ring core' });
+    s.addImage({ data: await icon('shield', TEAL), x: cx - 0.46, y: cy - 0.46, w: 0.92, h: 0.92, altText: 'shield', objectName: 'ring shield' });
+    txt(s, 'THE TEAM', { x: M, y: 4.1, w: 3, h: 0.3, fontSize: 12, bold: true, color: MUTED, charSpacing: 3, valign: 'middle' });
     const team = [['Nishad', 'Team Leader and Coder', AMBER], ['Arjun', 'Main Features and App Idea', BLUE], ['Rohan', 'Tech Stack and Coder', GREEN], ['Kartiekya', 'Use Cases and Future Implementations', TEAL]];
     for (let i = 0; i < 4; i++) {
       const x = M + i * 3.07, [n, r, col] = team[i];
-      card(s, x, 1.9, 2.8, 4.2, 'team card ' + n);
-      s.addShape(pres.ShapeType.ellipse, { x: x + 0.7, y: 2.3, w: 1.4, h: 1.4, fill: { color: col, transparency: 84 }, line: { color: col, width: 2 }, objectName: 'avatar ' + n });
-      txt(s, n[0], { x: x + 0.7, y: 2.3, w: 1.4, h: 1.4, fontSize: 44, bold: true, color: col, align: 'center', valign: 'middle' });
-      txt(s, n, { x: x + 0.2, y: 3.95, w: 2.4, h: 0.5, fontSize: 24, bold: true, align: 'center', valign: 'middle' });
-      txt(s, r, { x: x + 0.25, y: 4.55, w: 2.3, h: 1.2, fontSize: 15, color: MUTED, align: 'center', valign: 'top' });
+      card(s, x, 4.5, 2.8, 2.05, 'team card ' + n);
+      s.addShape(pres.ShapeType.ellipse, { x: x + 0.25, y: 4.72, w: 0.8, h: 0.8, fill: { color: col, transparency: 84 }, line: { color: col, width: 2 }, objectName: 'avatar ' + n });
+      txt(s, n[0], { x: x + 0.25, y: 4.72, w: 0.8, h: 0.8, fontSize: 26, bold: true, color: col, align: 'center', valign: 'middle' });
+      txt(s, n, { x: x + 1.2, y: 4.72, w: 1.5, h: 0.8, fontSize: 19, bold: true, valign: 'middle' });
+      txt(s, r, { x: x + 0.25, y: 5.7, w: 2.35, h: 0.75, fontSize: 14, color: MUTED, valign: 'top' });
     }
-    s.addNotes('Nishad leads and codes. Arjun came up with the app idea and core features. Rohan chose the tech stack and codes. Kartiekya owns use cases and the future roadmap.');
+    s.addNotes('Welcome. CypherSuraksha is a Chrome extension that protects people from three AI-driven threats, entirely on their own device. Nishad leads and codes. Arjun came up with the app idea and core features. Rohan chose the tech stack and codes. Kartiekya owns use cases and the future roadmap.');
   }
 
-  // ---------- 4. Features ----------
+  // ---------- 2. Problem + use cases ----------
+  {
+    const s = mk('CS_CONTENT');
+    s.addText('Problem and use cases', { placeholder: 'title' });
+    txt(s, 'THE PROBLEM', { x: M, y: 1.4, w: 5, h: 0.3, fontSize: 12, bold: true, color: RED, charSpacing: 3, valign: 'middle' });
+    const pr = [['leak', AMBER, 'Real details pasted into AI chats', 'Names, emails, IDs and keys land in a third party\'s logs.'],
+      ['eye', BLUE, 'Photos feed face recognition', 'A scraped selfie can be matched to you and carries location data.'],
+      ['phone', GREEN, 'Faces on video calls can be fake', 'Scammers use AI faces to impersonate people you trust.']];
+    for (let i = 0; i < 3; i++) {
+      const y = 1.8 + i * 1.68, [ic, c, h, d] = pr[i];
+      card(s, M, y, 5.6, 1.5, 'problem card ' + (i + 1));
+      await badge(s, M + 0.25, y + 0.4, 0.7, ic, c, 'problem ' + (i + 1));
+      txt(s, h, { x: M + 1.15, y: y + 0.18, w: 4.25, h: 0.45, fontSize: 17, bold: true, valign: 'middle' });
+      txt(s, d, { x: M + 1.15, y: y + 0.68, w: 4.25, h: 0.7, fontSize: 14, color: MUTED, valign: 'top' });
+    }
+    txt(s, 'USE CASES', { x: 6.75, y: 1.4, w: 5, h: 0.3, fontSize: 12, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
+    const uc = [['user', AMBER, 'Students and everyday users', 'Summarise an email thread in ChatGPT without exposing names or numbers.'],
+      ['family', BLUE, 'Families sharing photos', 'Post photos with location data removed and faces cloaked.'],
+      ['phone', GREEN, 'Spotting scam calls', 'A "relative" asks for money; the pill warns the face may be AI-generated.'],
+      ['brief', TEAL, 'Work and confidential projects', 'Codenames and account numbers in the vault never reach a chat.']];
+    for (let i = 0; i < 4; i++) {
+      const y = 1.8 + i * 1.26, [ic, c, h, d] = uc[i];
+      card(s, 6.75, y, 5.93, 1.14, 'use case card ' + (i + 1));
+      await badge(s, 6.95, y + 0.22, 0.7, ic, c, 'use case ' + (i + 1));
+      txt(s, h, { x: 7.85, y: y + 0.12, w: 4.7, h: 0.38, fontSize: 16, bold: true, valign: 'middle' });
+      txt(s, d, { x: 7.85, y: y + 0.5, w: 4.7, h: 0.58, fontSize: 14, color: MUTED, valign: 'top' });
+    }
+    s.addNotes('Left: the three problems. Right: who it helps. Most people have no tool for any of them.');
+  }
+
+  // ---------- 3. Features ----------
   {
     const s = mk('CS_CONTENT');
     s.addText('Features', { placeholder: 'title' });
@@ -133,25 +141,7 @@ async function icon(name, color) {
     s.addNotes('Three shields, each with its own switch in the popup. Everything runs locally: no accounts, no servers.');
   }
 
-  // ---------- 5. Use cases ----------
-  {
-    const s = mk('CS_CONTENT');
-    s.addText('Use cases', { placeholder: 'title' });
-    const u = [['user', AMBER, 'Students and everyday users', 'Paste an email thread into ChatGPT for a summary without exposing names, phone numbers or addresses.'],
-      ['family', BLUE, 'Families sharing photos', 'Post pictures of kids and relatives with location data removed and faces cloaked against scraping.'],
-      ['phone', GREEN, 'Spotting scam calls', 'A "relative" asks for money on a video call. The pill and warning say the face may be AI-generated.'],
-      ['brief', TEAL, 'Work and confidential projects', 'Add project codenames and account numbers to the never-share vault so no chat ever sees them.']];
-    for (let i = 0; i < 4; i++) {
-      const col = i % 2, row = Math.floor(i / 2), x = M + col * 6.2, y = 1.55 + row * 2.55, [ic, c, h, d] = u[i];
-      card(s, x, y, 5.93, 2.3, 'use case card ' + (i + 1));
-      await badge(s, x + 0.3, y + 0.32, 0.85, ic, c, 'use case ' + (i + 1));
-      txt(s, h, { x: x + 1.4, y: y + 0.3, w: 4.2, h: 0.55, fontSize: 20, bold: true, valign: 'middle' });
-      txt(s, d, { x: x + 1.4, y: y + 0.95, w: 4.2, h: 1.2, fontSize: 15, color: MUTED, valign: 'top' });
-    }
-    s.addNotes('Four everyday situations the extension is built for.');
-  }
-
-  // ---------- 6. Tech stack ----------
+  // ---------- 4. Tech stack ----------
   {
     const s = mk('CS_CONTENT');
     s.addText('Tech stack', { placeholder: 'title' });
@@ -171,7 +161,7 @@ async function icon(name, color) {
     s.addNotes('The "back-end" is empty on purpose: privacy comes from never sending data anywhere. The extension\'s Content Security Policy sets connect-src to none.');
   }
 
-  // ---------- 7. Live demo ----------
+  // ---------- 5. Live demo ----------
   {
     const s = mk('CS_CONTENT');
     s.addText('Live demo', { placeholder: 'title' });
@@ -185,6 +175,37 @@ async function icon(name, color) {
       { text: 'Recorded on a demo page that plays still pictures as a call tile, using the real extension.', options: { color: MUTED, fontSize: 12 } }],
       { isTextBox: true, x: 9.3, y: 2.15, w: 3.1, h: 3.7, fontFace: 'Arial', fontSize: 15, valign: 'top', margin: 0 });
     s.addNotes('Play the clip: real face stays green, AI-generated face turns red and triggers the warning. Be honest that this is a demo page with still pictures; live calls behave differently.');
+  }
+
+  // ---------- Results ----------
+  {
+    const s = mk('CS_CONTENT');
+    s.addText('Results', { placeholder: 'title' });
+    const st = [['53 / 53', TEAL, 'PII entities redacted', 'names, places, organisations in 20 test prompts (regex alone: 47%)'],
+      ['72 ms', AMBER, 'median per prompt', 'redaction with the NER model on WASM'],
+      ['97.5% to 30%', BLUE, 'face match rate after cloaking', 'FaceNet identification; 8 to 15 s per photo'],
+      ['53 ms', GREEN, 'per video frame', 'deepfake check on a real GPU (627 ms on CPU)']];
+    for (let i = 0; i < 4; i++) {
+      const col = i % 2, row = Math.floor(i / 2), x = M + col * 3.4, y = 1.5 + row * 2.35, [big, c, l, d] = st[i];
+      card(s, x, y, 3.2, 2.15, 'stat card ' + (i + 1));
+      txt(s, big, { x: x + 0.25, y: y + 0.2, w: 2.75, h: 0.75, fontSize: i === 2 ? 26 : 34, bold: true, color: c, valign: 'middle' });
+      txt(s, l, { x: x + 0.25, y: y + 0.98, w: 2.75, h: 0.35, fontSize: 14, bold: true, valign: 'middle' });
+      txt(s, d, { x: x + 0.25, y: y + 1.35, w: 2.75, h: 0.7, fontSize: 12, color: MUTED, valign: 'top' });
+    }
+    card(s, 7.6, 1.5, 5.08, 4.55, 'model sizes card');
+    txt(s, 'MODEL SIZES (MB)', { x: 7.9, y: 1.68, w: 4.5, h: 0.3, fontSize: 12, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
+    const sizes = [['Face finder', MB['face-detector.ultraface.onnx']], ['Deepfake INT8', MB['people-deepfake.int8.onnx']], ['Deepfake FP32', MB['people-deepfake.fp32.onnx']], ['PII NER INT8', MB['privacy-ner.int8.onnx']], ['Cloak FaceNet x2', MB['cloak-facenet-casia.onnx'] + MB['cloak-facenet-vggface2.onnx']], ['Face-swap (optional)', MB['people-gend.fp16.onnx']]];
+    const maxMB = Math.max(...sizes.map((x) => x[1])), barX = 9.95, barMax = 1.95;
+    const colors = [TEAL, TEAL, TEAL, AMBER, BLUE, MUTED];
+    sizes.forEach(([label, mb], i) => {
+      const y = 2.2 + i * 0.64;
+      txt(s, label, { x: 7.9, y, w: 2.0, h: 0.44, fontSize: 13, valign: 'middle' });
+      const w = Math.max(0.06, (mb / maxMB) * barMax);
+      s.addShape(pres.ShapeType.roundRect, { x: barX, y: y + 0.08, w, h: 0.28, rectRadius: 0.05, fill: { color: colors[i] }, line: { color: colors[i], width: 0 }, objectName: 'size bar ' + label });
+      txt(s, (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + ' MB', { x: barX + w + 0.1, y, w: 0.95, h: 0.44, fontSize: 13, bold: true, color: TEXT, valign: 'middle' });
+    });
+    txt(s, 'Measured on our dev Mac (Apple GPU). 20-sentence PII test and 40-identity face test are small, so treat them as indicative. A different recogniser, ArcFace, was barely affected by the cloak (95% still matched).', { x: M, y: 6.28, w: 12.0, h: 0.5, fontSize: 12, color: MUTED, valign: 'top' });
+    s.addNotes('All numbers come from our own tests in MODELS.md. PII: 53 of 53 entities with the model, 47% with regex alone. Cloak: FaceNet identification falls from 97.5% to about 30%, but ArcFace is barely affected, which is why we want our own cloaking models. Video: 53 ms per frame on Apple Metal vs 627 ms on CPU. Sizes are the real model files.');
   }
 
   // ---------- 8. Future ----------
@@ -207,7 +228,7 @@ async function icon(name, color) {
 
   // ---------- 9. Closing ----------
   {
-    const s = mk('CS_TITLE');
+    const s = mk('CS_CLOSE');
     s.addText('Thank you', { placeholder: 'title' });
     txt(s, 'Your data stays yours.', { x: M, y: 3.7, w: 7, h: 0.6, fontSize: 24, color: TEAL, bold: true });
     txt(s, 'Questions?', { x: M, y: 4.4, w: 7, h: 0.5, fontSize: 20, color: MUTED });
