@@ -216,6 +216,7 @@ All testing so far used stand-in pages. These leaves wait for real runs on the r
   - _note:_ 2026-11-24 LIVE PASS on real reddit.com in the user's Chrome (reported by the user: 'it works', not machine-verified; the build had the cloak models). Needed one live fix: Reddit's file input sits inside a web component, invisible to window-level listeners; now interception uses composed-path targets and listeners inside every open shadow root (e2e: change-only handler inside a shadow root gets the cloaked file, 3/3). Imgur's CREATE_ALBUM_FAIL was never explained (control test not run) and is not part of this pass. Known limit: sites using a detached input or the File System Access API are invisible to the interceptor.
 - [ ] `P5.1.6` Pill on a live Meet/Zoom/WhatsApp call
   - _acceptance:_ pill appears on a real call video
+  - _note:_ 2026-11-24 live Meet attempt (user's Chrome): the pill appeared but FLAGGED THE USER'S REAL VIDEO as AI-generated (false positive on a real webcam; webcam video had never been tested). Which detector raised it is not yet known (the pill showed one combined number). Added: per-model scores (main model, face-swap detector) in the pill tooltip and a 'Latest reading' line in the popup status panel. NOT ticked and NOT a pass: needs the readings, then a calibration/threshold decision based on real webcam data.
 **P5.2 Release**
 
 - [x] `P5.2.1` Chrome Web Store package and privacy policy

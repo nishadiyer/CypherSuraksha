@@ -128,7 +128,20 @@ function ThisPage({ page }: { page: PageState }) {
             <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page, {String(d.components)} web component{d.components === 1 ? '' : 's'} checked)</Row>,
             <Row ok="info" key="us">Photo selections AI Shield has seen on this page: {String(d.selectionsSeen)}. If you picked a photo and this is still 0, this site's file picker is invisible to AI Shield.</Row>,
           ];
-        if (p.part === 'video') return <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>;
+        if (p.part === 'video') {
+          const v = (n: unknown): string => (Number(n) < 0 ? 'n/a' : `${n}%`);
+          return [
+            <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>,
+            d.hasReading ? (
+              <Row ok="info" key="vr">
+                Latest reading: {String(d.level)}. Smoothed {v(d.smoothed)}; this frame {v(d.frame)} (main model {v(d.main)}
+                {Number(d.swap) >= 0 ? `, face-swap detector ${v(d.swap)}` : ', face-swap detector not running'}); {String(d.backend)}, {String(d.fps)} fps. The pill turns amber from 40% and red from 70% (smoothed over 5 frames).
+              </Row>
+            ) : (
+              <Row ok="info" key="vr">No reading yet (a face has to be in view).</Row>
+            ),
+          ];
+        }
         return null;
       })}
     </ul>

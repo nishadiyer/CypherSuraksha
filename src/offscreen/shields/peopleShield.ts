@@ -44,7 +44,7 @@ export const peopleShield: Shield = {
     const key = `${req.tabId}:${p.sessionId}`;
     sweep();
     let rgba: Uint8ClampedArray<ArrayBuffer> | undefined = new Uint8ClampedArray(b64ToBytes(p.b64).buffer);
-    let frame: { score: number; backend: string; gend?: number } | null = null;
+    let frame: { score: number; backend: string; gend?: number; main?: number } | null = null;
     let noFace = false;
     const timing: NonNullable<PeopleResult['timingMs']> = { detect: 0, main: 0 };
     try {
@@ -67,6 +67,7 @@ export const peopleShield: Shield = {
               timing.gendPrep = lastGendTiming.prep;
               timing.gendRun = lastGendTiming.run;
             }
+            if (frame) frame = { ...frame, main: frame.score };
             if (frame && g !== null) frame = { ...frame, score: Math.max(frame.score, g), gend: g };
           } finally {
             zero(crop.rgba);
@@ -74,6 +75,7 @@ export const peopleShield: Shield = {
         } else noFace = true;
       } else {
         frame = await classifyFrame(rgba, p.width, p.height); // no detector installed: legacy whole-frame path
+        if (frame) frame = { ...frame, main: frame.score };
       }
     } finally {
       if (rgba) zero(rgba); // video frame never outlives this call
@@ -98,6 +100,7 @@ export const peopleShield: Shield = {
       sustainedRed: s.sustainedRed,
       backend: frame?.backend ?? 'unavailable',
       gend: frame?.gend,
+      main: frame?.main,
       timingMs: timing,
     };
     return {

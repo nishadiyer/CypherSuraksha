@@ -80,6 +80,8 @@ export interface PeopleResult {
   backend: string;
   /** per-stage wall time in ms (diagnostics only, no frame data) */
   timingMs?: { detect: number; main: number; gend?: number; gendPrep?: number; gendRun?: number };
+  /** the main model's own score for this frame (frameScore is the larger of this and the face-swap detector's) */
+  main?: number;
   /** calibrated score of the optional face-swap detector (GenD), when it ran on this frame */
   gend?: number;
   /** 'no-face': the frame had no usable face, so it was not scored (score fields are neutral). */

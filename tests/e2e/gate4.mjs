@@ -54,6 +54,13 @@ export default async function gate4() {
     await page.evaluate(() => { window.__bright = true; });
     const red = await waitFor(() => pillIs('Fake?'), 30000, 500);
     check('rolling window flips the pill to RED', !!red, await readClosedShadowText(page));
+    // The popup's panel explains the pill: latest level and per-model scores, numbers only.
+    const vstat = await sw.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ url: 'https://meet.google.com/*' });
+      const st = await chrome.tabs.sendMessage(tab.id, { kind: 'PAGE_STATUS' });
+      return st?.parts?.find((p) => p.part === 'video')?.detail;
+    });
+    check('page status explains the pill: latest level RED with the smoothed and per-model scores', vstat?.hasReading === true && vstat.level === 'RED' && vstat.smoothed >= 70 && vstat.main >= 0 && vstat.swap === -1, JSON.stringify(vstat));
     const modal = await waitFor(async () => (await readClosedShadowText(page)).includes('may be AI-generated'), 20000, 500);
     check('circuit-breaker modal appears on sustained RED', !!modal);
     check('modal is not readable from the page (closed shadow root)', await page.evaluate(() => [...document.documentElement.children].every((e) => e.shadowRoot === null)));

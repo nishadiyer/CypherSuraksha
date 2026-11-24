@@ -44,7 +44,7 @@ function Pill({ r, fps }: { r: PeopleResult; fps: number }) {
   return (
     <div
       role="status"
-      title={`${label(r)} · ${(r.smoothed * 100).toFixed(0)}% · ${r.backend} · ${fps.toFixed(1)} fps`}
+      title={`${label(r)} · smoothed ${(r.smoothed * 100).toFixed(0)}% (this frame: main model ${r.main === undefined ? '-' : (r.main * 100).toFixed(0) + '%'}${r.gend === undefined ? '' : ', face-swap detector ' + (r.gend * 100).toFixed(0) + '%'}) · ${r.backend} · ${fps.toFixed(1)} fps`}
       class="flex items-center gap-1.5 rounded-full bg-black/70 px-2.5 py-1 text-[11px] text-white shadow font-sans"
     >
       <span class={`inline-block h-2.5 w-2.5 rounded-full ${r.status === 'no-face' ? NEUTRAL : COLORS[r.level]}`} />
