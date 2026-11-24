@@ -132,6 +132,7 @@ function ThisPage({ page }: { page: PageState }) {
           const v = (n: unknown): string => (Number(n) < 0 ? 'n/a' : `${n}%`);
           return [
             <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>,
+            <Row ok="info" key="vt">Analysing {String(d.tracked)} video{d.tracked === 1 ? '' : 's'}{d.trackedSizes ? ` (${String(d.trackedSizes)})` : ''}; {String(d.duplicatesSkipped)} duplicate{d.duplicatesSkipped === 1 ? '' : 's'} of the same source skipped. One pill per video.</Row>,
             d.hasReading ? (
               <Row ok="info" key="vr">
                 Latest reading: {String(d.level)}. Smoothed {v(d.smoothed)}; this frame {v(d.frame)} (main model {v(d.main)}

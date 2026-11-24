@@ -1,6 +1,6 @@
 import type { PeopleResult } from '../types/shield';
 import { newRequestId, send } from '../shared/messages';
-import { installVideoSampler } from './interceptors/videoInterceptor';
+import { installVideoSampler, videoStats } from './interceptors/videoInterceptor';
 import { onTestNotification, registerPageStatus } from './status';
 import { showToast } from './ui/Toast';
 import { removePill, updatePill } from './ui/PeopleUI';
@@ -10,6 +10,9 @@ let last: { r: PeopleResult; fps: number } | undefined;
 const pct = (v: number | undefined): number => (typeof v === 'number' ? Math.round(v * 100) : -1);
 registerPageStatus('video', () => ({
   videos: document.querySelectorAll('video').length,
+  tracked: videoStats.tracked.length,
+  duplicatesSkipped: videoStats.skippedDuplicates,
+  trackedSizes: videoStats.tracked.map((t) => `${t.w}x${t.h} ${t.source}`).join(', '),
   // the latest reading, so the popup can show WHY the pill says what it says (numbers only)
   hasReading: !!last,
   level: last?.r.status === 'no-face' ? 'NO-FACE' : (last?.r.level ?? ''),

@@ -89,6 +89,37 @@ export function grabFrame(video: HTMLVideoElement, maxSide = FRAME_MAX_SIDE): { 
 const eligible = (v: HTMLVideoElement): boolean =>
   !v.paused && !v.ended && v.readyState >= 2 && v.videoWidth >= MIN_W && v.videoHeight >= MIN_H && v.clientWidth >= MIN_W && v.clientHeight >= MIN_H;
 
+/** What the popup shows about video tracking (counts and sizes only). */
+export const videoStats: { eligible: number; skippedDuplicates: number; tracked: Array<{ w: number; h: number; source: string }> } = { eligible: 0, skippedDuplicates: 0, tracked: [] };
+
+/**
+ * Identifies the source behind a video so the same camera shown in several elements (for example a call's main tile plus a
+ * thumbnail) is analysed once. A local camera is identified by its device id (clones of one camera share it); any other
+ * stream by its track id. `key` is null when the source cannot be told (no MediaStream).
+ */
+export function sourceOf(v: HTMLVideoElement): { key: string | null; kind: 'local-camera' | 'stream' | 'unknown' } {
+  const so = v.srcObject as MediaStream | null;
+  const track = so && typeof so.getVideoTracks === 'function' ? so.getVideoTracks()[0] : undefined;
+  if (!track) return { key: null, kind: 'unknown' };
+  const deviceId = typeof track.getSettings === 'function' ? track.getSettings().deviceId : undefined;
+  return deviceId ? { key: `local:${deviceId}`, kind: 'local-camera' } : { key: `track:${track.id}`, kind: 'stream' };
+}
+
+/** One video per source, largest first (input must already be sorted by size, descending). Unknown sources are all kept. */
+export function chooseVideos(videos: HTMLVideoElement[], describe: (v: HTMLVideoElement) => { key: string | null } = sourceOf): HTMLVideoElement[] {
+  const seen = new Set<string>();
+  const out: HTMLVideoElement[] = [];
+  for (const v of videos) {
+    const { key } = describe(v);
+    if (key !== null) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    out.push(v);
+  }
+  return out;
+}
+
 /**
  * Watches the page for playing <video> elements (WebRTC streams render into these)
  * and samples each at an adaptive 0.5-2 FPS. At most one request per video is in flight.
@@ -146,8 +177,14 @@ export function installVideoSampler(win: Window, deps: VideoDeps): () => void {
   }
 
   const scan = (): void => {
-    const videos = [...doc.querySelectorAll('video')].sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
-    for (const v of videos) if (eligible(v)) track(v);
+    const eligibleVideos = [...doc.querySelectorAll('video')].filter(eligible).sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
+    const chosen = chooseVideos(eligibleVideos);
+    // a duplicate of an already-tracked source (a second element showing the same camera) loses its pill
+    for (const [v, t] of [...tracked]) if (eligibleVideos.includes(v) && !chosen.includes(v)) t.stop();
+    for (const v of chosen) track(v);
+    videoStats.eligible = eligibleVideos.length;
+    videoStats.skippedDuplicates = eligibleVideos.length - chosen.length;
+    videoStats.tracked = [...tracked.keys()].map((v) => ({ w: v.clientWidth, h: v.clientHeight, source: sourceOf(v).kind }));
   };
 
   const mo = new MutationObserver(scan);

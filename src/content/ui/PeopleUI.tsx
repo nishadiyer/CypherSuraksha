@@ -8,6 +8,8 @@ function label(r: PeopleResult): string {
   if (r.backend === 'unavailable') return 'Unverified — detector not installed';
   if (r.status === 'no-face') return 'No face in view — nothing to check';
   if (r.level === 'GREEN') return 'No sign of AI-generated video found (this does not prove the caller is real)';
+  // amber caused only by the experimental face-swap detector (the main model is below its own amber line)
+  if (r.level === 'YELLOW' && r.gend !== undefined && (r.main ?? 0) < 0.4) return 'Unsure — the experimental face-swap detector thinks this may be a swapped face (it can be wrong; the main model sees nothing)';
   if (r.level === 'YELLOW') return 'Be cautious — possible manipulation';
   return 'Likely AI-generated video';
 }

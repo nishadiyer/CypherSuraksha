@@ -83,6 +83,27 @@ export default async function gate4() {
     check('content script wrote nothing to the page origin storage', pidb.idb === 0 && pidb.ls === 0, JSON.stringify(pidb));
     const led = await sw.evaluate(async () => (await chrome.storage.local.get('ledger')).ledger);
     check('callsProtected counted once for the call', led?.callsProtected === 1, JSON.stringify(led));
+    // One pill per video SOURCE: two elements showing the same stream get one pill; two distinct streams get two.
+    const DUAL = (shared) => `<!doctype html><body style="margin:0;background:#111">
+<canvas id="c" width="640" height="480" style="display:none"></canvas>
+<video id="a" autoplay muted playsinline style="width:320px;height:240px"></video>
+<video id="b" autoplay muted playsinline style="width:300px;height:225px"></video>
+<script>
+  const c = document.getElementById('c'), g = c.getContext('2d');
+  setInterval(() => { g.fillStyle = '#101010'; g.fillRect(0, 0, 640, 480); g.fillStyle = '#888'; g.fillRect(Math.random() * 600, Math.random() * 440, 20, 20); }, 50);
+  const s1 = c.captureStream(20);
+  a.srcObject = s1; b.srcObject = ${shared ? 's1' : 'c.captureStream(20)'};
+  a.play(); b.play();
+</script></body>`;
+    const pillCount = (pg) => pg.evaluate(() => [...document.documentElement.children].filter((e) => e.style.zIndex === '2147483647').length);
+    for (const [shared, expected, label] of [[true, 1, 'two elements showing the SAME stream get ONE pill'], [false, 2, 'two DIFFERENT streams (like two participants) get two pills']]) {
+      const { page: dual } = await fakeSite(browser, 'meet.google.com', DUAL(shared));
+      await waitFor(async () => (await pillCount(dual)) >= 1, 40000, 500);
+      await sleep(7000); // time for a wrongly-tracked second video to show its pill
+      const n = await pillCount(dual);
+      check(label, n === expected, `${n} pill(s)`);
+      await dual.close();
+    }
     await page.close();
   } finally {
     await ctx.cleanup();

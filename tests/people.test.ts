@@ -32,6 +32,20 @@ describe('temporal smoothing (5-frame rolling window)', () => {
   });
 });
 
+describe('one pill per video source', () => {
+  const v = (id: string) => ({ id }) as unknown as HTMLVideoElement;
+  it('keeps one video per source (the largest, since input is size-sorted) and every video of unknown source', async () => {
+    const { chooseVideos } = await import('../src/content/interceptors/videoInterceptor');
+    const keys: Record<string, string | null> = { big: 'local:cam1', thumb: 'local:cam1', remote: 'track:abc', blob1: null, blob2: null };
+    const chosen = chooseVideos([v('big'), v('remote'), v('thumb'), v('blob1'), v('blob2')], (x) => ({ key: keys[(x as unknown as { id: string }).id] ?? null }));
+    expect(chosen.map((c) => (c as unknown as { id: string }).id)).toEqual(['big', 'remote', 'blob1', 'blob2']);
+  });
+  it('returns nothing for no videos', async () => {
+    const { chooseVideos } = await import('../src/content/interceptors/videoInterceptor');
+    expect(chooseVideos([])).toEqual([]);
+  });
+});
+
 describe('face-swap detector cap', () => {
   it('is below the red line, so the detector alone can never turn the pill red or trip the circuit breaker', async () => {
     const { GEND_CAP } = await import('../src/offscreen/shields/people/gend');
