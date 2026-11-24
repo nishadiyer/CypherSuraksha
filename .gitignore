@@ -10,3 +10,5 @@ tests/fixtures/deepfake-test/*
 .venv-people
 .cloak-work
 .DS_Store
+dist-demo
+demo/media

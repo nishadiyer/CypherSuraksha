@@ -69,6 +69,8 @@ export default async function gatePeople() {
       }
     }
     const scored = (rows) => rows.filter((r) => r.score !== null);
+    // E2E_DUMP_SCORES=path: write per-image main / face-swap-detector scores (used to choose demo examples)
+    if (process.env.E2E_DUMP_SCORES) (await import('node:fs')).writeFileSync(process.env.E2E_DUMP_SCORES, JSON.stringify(plain.map((r) => ({ file: r.file, label: r.label, generator: r.generator, main: r.main ?? null, gend: r.gend ?? null, score: r.score })), null, 1));
     const rate = (rows) => scored(rows).length / rows.length;
     const lat = scored(plain).map((r) => r.ms).sort((a, b) => a - b);
     const backends = [...new Set(scored(plain).map((r) => r.backend))];

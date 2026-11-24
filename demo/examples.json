@@ -1,0 +1,6 @@
+{
+  "_note": "Chosen by scoring every sample image through the real pipeline (E2E_DUMP_SCORES): real 0%/0%; AI-generated main 99.7%; face-swap main 0% but face-swap detector 100%.",
+  "real": "real-wiki-00.jpg",
+  "ai": "fake-text2img-02.jpg",
+  "swap": "fake-insight-01.jpg"
+}

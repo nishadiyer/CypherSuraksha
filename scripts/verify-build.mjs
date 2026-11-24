@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
-const m = JSON.parse(readFileSync(new URL('../dist/manifest.json', import.meta.url), 'utf8'));
+const dir = process.argv[2] ?? 'dist';
+const m = JSON.parse(readFileSync(new URL(`../${dir}/manifest.json`, import.meta.url), 'utf8'));
 const fail = (msg) => { console.error('GATE FAIL:', msg); process.exit(1); };
 const csp = m.content_security_policy?.extension_pages ?? '';
 if (!csp.includes("connect-src 'none'")) fail("CSP missing connect-src 'none'");
@@ -9,5 +10,5 @@ const bad = (m.permissions ?? []).filter((p) => banned.includes(p));
 if (bad.length) fail('banned permissions: ' + bad.join(','));
 if ((m.host_permissions ?? []).some((h) => h === '<all_urls>' || h === '*://*/*')) fail('broad host_permissions');
 if (m.externally_connectable) fail('externally_connectable present');
-if (!existsSync(new URL('../dist/src/offscreen/offscreen.html', import.meta.url))) fail('offscreen.html not in dist');
+if (!existsSync(new URL(`../${dir}/src/offscreen/offscreen.html`, import.meta.url))) fail(`offscreen.html not in ${dir}`);
 console.log('GATE OK: permissions =', JSON.stringify(m.permissions), '| CSP =', csp);

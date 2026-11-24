@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Shield demo</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #0f1115; color: #e6e8ee; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { color: #aab0bd; margin: 6px 0 14px; }
+  #stage { position: relative; width: 640px; max-width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #2a2f3a; }
+  video { width: 100%; height: 100%; display: block; object-fit: contain; background: #000; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  button, label.file { background: #1d2230; color: #e6e8ee; border: 1px solid #343b4b; border-radius: 8px; padding: 8px 12px; font: inherit; cursor: pointer; }
+  button[aria-pressed="true"] { background: #2b3a66; border-color: #5b7ae8; }
+  label.file input { display: none; }
+  #expect { background: #161a23; border: 1px solid #2a2f3a; border-radius: 10px; padding: 12px 14px; }
+  #expect b { color: #fff; }
+  .small { font-size: 12px; color: #8a91a1; }
+  #msg { color: #ffb4a8; }
+</style>
+<main>
+  <h1>🛡️ AI Shield — live demo</h1>
+  <p>This page plays a still picture as if it were a participant on a video call, so you can watch AI Shield's pill react. It is a <b>demo only</b>: real calls are live video.</p>
+  <div id="stage"><video id="v" autoplay muted playsinline></video></div>
+  <div class="row">
+    <button data-mode="real" aria-pressed="true">Real person</button>
+    <button data-mode="ai" aria-pressed="false">AI-generated face</button>
+    <button data-mode="swap" aria-pressed="false">Face-swapped face</button>
+    <label class="file">Use my own image or video…<input id="file" type="file" accept="image/*,video/*"></label>
+  </div>
+  <div id="expect"></div>
+  <p id="msg"></p>
+  <p class="small">Needs the AI Shield <b>demo build</b> loaded in Chrome (<code>npm run build:demo</code>, load <code>dist-demo/</code>). The pill appears on the video within about 10–20 seconds. Sample pictures come from public research datasets and are not part of the repository.</p>
+</main>
+<script>
+  const W = 640, H = 360;
+  const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const g = canvas.getContext('2d');
+  const v = document.getElementById('v');
+  v.srcObject = canvas.captureStream(15);
+  v.play();
+
+  const EXPECT = {
+    real: '<b>Expected:</b> a green <b>“No fake found”</b> pill. (A green pill never proves someone is real.)',
+    ai: '<b>Expected:</b> the pill turns <b>red</b> after roughly 10–20 seconds, then the warning <b>“This video may be AI-generated”</b> appears. The main model reads fully AI-generated faces well.',
+    swap: '<b>Expected:</b> usually a <b>green</b> pill, because the main model cannot see face-swaps. Turn on <b>Face-swap detector (experimental)</b> in the AI Shield popup (needs a real GPU and the optional model) and it shows <b>amber “Unsure”</b>. It is never red for a swap, by design: that detector is experimental and once flagged a real webcam.',
+    mine: '<b>Your own file:</b> the pill follows whatever the models make of it. Red means the main model thinks it is fully AI-generated; amber means unsure.',
+  };
+  const images = {};
+  let src = null; // an HTMLImageElement or HTMLVideoElement to draw
+  let mode = 'real';
+
+  function load(kind) {
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = `media/${kind}.jpg`;
+    });
+  }
+  async function select(kind) {
+    mode = kind;
+    document.querySelectorAll('button[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === kind)));
+    document.getElementById('expect').innerHTML = EXPECT[kind] ?? '';
+    document.getElementById('msg').textContent = '';
+    if (kind in images || !['real', 'ai', 'swap'].includes(kind)) {
+      src = images[kind] ?? src;
+    } else {
+      images[kind] = await load(kind);
+      src = images[kind];
+    }
+    if (!src && ['real', 'ai', 'swap'].includes(kind)) document.getElementById('msg').textContent = 'No picture found. Run "npm run fixtures" then "npm run demo:prepare" and reload this page.';
+  }
+  document.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => select(b.dataset.mode)));
+  document.getElementById('file').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    if (f.type.startsWith('video/')) {
+      const el = Object.assign(document.createElement('video'), { src: url, loop: true, muted: true, playsInline: true });
+      el.play();
+      src = el;
+    } else {
+      const img = new Image();
+      img.onload = () => { src = img; };
+      img.src = url;
+    }
+    mode = 'mine';
+    document.querySelectorAll('button[data-mode]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+    document.getElementById('expect').innerHTML = EXPECT.mine;
+  });
+
+  // Draw ~15 fps, letterboxed on a dark background, with a little jitter so it behaves like live video rather than a frozen frame.
+  setInterval(() => {
+    g.fillStyle = '#111';
+    g.fillRect(0, 0, W, H);
+    if (!src) return;
+    const w = src.videoWidth || src.naturalWidth, h = src.videoHeight || src.naturalHeight;
+    if (!w || !h) return;
+    const s = Math.min(W / w, H / h);
+    const dx = (Math.random() - 0.5) * 2, dy = (Math.random() - 0.5) * 2;
+    g.globalAlpha = 0.97 + Math.random() * 0.03;
+    g.drawImage(src, (W - w * s) / 2 + dx, (H - h * s) / 2 + dy, w * s, h * s);
+    g.globalAlpha = 1;
+  }, 66);
+  select('real');
+</script>

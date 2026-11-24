@@ -55,6 +55,10 @@ Open `chrome://extensions`, enable Developer mode, **Load unpacked**, choose `di
 
 `npm run test:e2e` additionally drives a real Chrome against fake pages (needs Google Chrome; set `CHROME_PATH` if it is not in the macOS default location). It is a developer check and is not part of `npm run build`.
 
+## Demo
+
+To show AI Shield catching an AI-generated or swapped face on stage, see [docs/DEMO.md](docs/DEMO.md) (a local demo page plus a separate demo build).
+
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md).

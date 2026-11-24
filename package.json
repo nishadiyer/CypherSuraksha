@@ -15,7 +15,9 @@
     "models": "node scripts/fetch-models.mjs",
     "fixtures": "python3 -I scripts/fetch-deepfake-fixture.py",
     "models:cloak": "bash scripts/cloak/build-models.sh",
-    "models:gend": "bash scripts/people/build-gend.sh"
+    "models:gend": "bash scripts/people/build-gend.sh",
+    "demo:prepare": "node scripts/demo/prepare.mjs",
+    "build:demo": "tsc --noEmit && AISHIELD_DEMO=1 vite build --outDir dist-demo && node scripts/verify-build.mjs dist-demo"
   },
   "dependencies": {
     "onnxruntime-web": "^1.31.1",
