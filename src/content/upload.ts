@@ -3,11 +3,16 @@ import { newRequestId, send } from '../shared/messages';
 import type { PixelsResult } from '../types/shield';
 import { installUploadInterceptor } from './interceptors/uploadInterceptor';
 import { showCloakResult, showCloaking } from './ui/CloakBadge';
-import { onTestNotification, registerPageStatus } from './status';
+import { uploadStats } from './interceptors/uploadInterceptor';
+import { deepQuery, onTestNotification, registerPageStatus } from './status';
 import { showToast } from './ui/Toast';
 
 onTestNotification(() => showToast('AI Shield test: notifications show on this page'));
-registerPageStatus('upload', () => ({ fileInputs: document.querySelectorAll('input[type=file]').length }));
+registerPageStatus('upload', () => ({
+  fileInputs: [...deepQuery(document, 'input[type=file]')].length, // includes ones inside open web components
+  components: uploadStats.shadowRoots,
+  selectionsSeen: uploadStats.selections,
+}));
 
 /** Files that went out re-encoded with nothing cloaked (no face found); the badge reports them honestly. */
 const noFace = new WeakSet<File>();

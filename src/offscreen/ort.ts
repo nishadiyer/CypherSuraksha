@@ -89,7 +89,7 @@ export function getModel(file: string, only?: readonly Backend[]): Promise<Loade
       try {
         for (const eps of order) {
           try {
-            const session = await ort.InferenceSession.create(bytes, { executionProviders: eps, graphOptimizationLevel: 'all' });
+            const session = await ort.InferenceSession.create(bytes, { executionProviders: eps, graphOptimizationLevel: 'all', logSeverityLevel: 3 });
             return { ort, session, backend: eps[0]! } satisfies LoadedModel;
           } catch (e) {
             lastErr = e;

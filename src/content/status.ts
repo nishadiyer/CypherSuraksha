@@ -56,7 +56,7 @@ export interface EditableCandidate {
 const EDITABLE = 'textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], input[type="text"], input[type="search"], input:not([type])';
 
 /** Walks the document, going into open shadow roots, and returns elements matching `selector`. */
-function* deepQuery(root: ParentNode, selector: string, inShadow = false): Generator<{ el: Element; inShadow: boolean }> {
+export function* deepQuery(root: ParentNode, selector: string, inShadow = false): Generator<{ el: Element; inShadow: boolean }> {
   for (const el of root.querySelectorAll(selector)) yield { el, inShadow };
   for (const host of root.querySelectorAll('*')) {
     if (host.shadowRoot) yield* deepQuery(host.shadowRoot, selector, true);

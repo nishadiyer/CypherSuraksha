@@ -79,4 +79,56 @@ export default async function gate3({ browser, sw }) {
   r = await page.evaluate(`(${analyse})(${JSON.stringify(b64)}, window.__files[0])`);
   check('after bypass the original passes through untouched', r.sameBytes, JSON.stringify(r));
   await page.close();
+
+  // ---- Reddit-style page: the file input and the drop zone live INSIDE an open web component, and the page's own handlers
+  // sit inside it too. `change` does not leave a shadow root, so a window-level listener alone would never see it and the
+  // page would receive the ORIGINAL photo.
+  console.log('Web-component page (open shadow root): input + drop zone inside, page handlers inside');
+  const WC = `<!doctype html><body><x-uploader></x-uploader><script>
+    window.__got = [];
+    customElements.define('x-uploader', class extends HTMLElement {
+      connectedCallback() {
+        const r = this.attachShadow({ mode: 'open' });
+        r.innerHTML = '<input type="file" id="in" accept="image/*"><div id="zone" style="width:300px;height:200px;border:1px solid #888">drop</div>';
+        r.getElementById('in').addEventListener('change', (e) => window.__got.push(...e.target.files));
+        const z = r.getElementById('zone');
+        z.addEventListener('dragover', (e) => e.preventDefault());
+        z.addEventListener('drop', (e) => { e.preventDefault(); window.__got.push(...e.dataTransfer.files); });
+      }
+    });
+  </script></body>`;
+  const { page: wc } = await fakeSite(browser, 'www.reddit.com', WC);
+  // The content script loads asynchronously after the page: wait until it reports itself before selecting a file.
+  for (let i = 0; i < 50; i++) {
+    const alive = await sw.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ url: 'https://www.reddit.com/*' });
+      try { return !!(await chrome.tabs.sendMessage(tab.id, { kind: 'PAGE_STATUS' }))?.parts?.length; } catch { return false; }
+    });
+    if (alive) break;
+    await sleep(200);
+  }
+  const wcInput = (await wc.evaluateHandle(() => document.querySelector('x-uploader').shadowRoot.getElementById('in'))).asElement();
+  await wcInput.uploadFile(path);
+  await sleep(1800);
+  let got = await wc.evaluate(() => window.__got.length);
+  check('[web component] the page inside the component received exactly one file via <input> change', got === 1, String(got));
+  r = await wc.evaluate(`(${analyse})(${JSON.stringify(b64)}, window.__got[0])`);
+  check('[web component] that file is the CLOAKED one, never the original', !r.sameBytes && r.max > 0 && r.max <= 5 && r.w === r.ow, JSON.stringify(r));
+  await wc.evaluate(`(async () => {
+    const bytes = Uint8Array.from(atob(${JSON.stringify(b64)}), (c) => c.charCodeAt(0));
+    const dt = new DataTransfer(); dt.items.add(new File([bytes], 'dropped2.png', { type: 'image/png' }));
+    document.querySelector('x-uploader').shadowRoot.getElementById('zone').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, composed: true, dataTransfer: dt, clientX: 40, clientY: 40 }));
+  })()`);
+  await sleep(1800);
+  got = await wc.evaluate(() => window.__got.length);
+  check('[web component] a drop onto the zone inside the component delivers exactly one more file', got === 2, String(got));
+  r = await wc.evaluate(`(${analyse})(${JSON.stringify(b64)}, window.__got[1])`);
+  check('[web component] the dropped file is cloaked too', r.name === 'dropped2.png' && !r.sameBytes && r.max > 0 && r.max <= 5, JSON.stringify(r));
+  const st = await sw.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ url: 'https://www.reddit.com/*' });
+    return chrome.tabs.sendMessage(tab.id, { kind: 'PAGE_STATUS' });
+  });
+  const up = st?.parts?.find((p) => p.part === 'upload')?.detail;
+  check('[web component] page status sees the hidden file field, the component and both selections', up?.fileInputs === 1 && up?.components >= 1 && up?.selectionsSeen === 2, JSON.stringify(up));
+  await wc.close();
 }

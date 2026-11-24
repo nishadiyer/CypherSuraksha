@@ -123,7 +123,11 @@ function ThisPage({ page }: { page: PageState }) {
             Number(d.placeholdersRestorable) > 0 ? <Row ok={false} key="pr">{String(d.placeholdersRestorable)} placeholder(s) are still showing on screen and should have been replaced. Tell the developer.</Row> : null,
             Number(d.placeholdersInEditable) > 0 ? <Row ok="info" key="pe">{String(d.placeholdersInEditable)} placeholder(s) sit inside an editable area (for example a document or canvas editor). AI Shield leaves editable text alone on purpose: changing it would make the site think you typed the real value and could save it.</Row> : null,
           ];
-        if (p.part === 'upload') return <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page)</Row>;
+        if (p.part === 'upload')
+          return [
+            <Row ok key="u">Photo upload protection is running ({String(d.fileInputs)} file field{d.fileInputs === 1 ? '' : 's'} on this page, {String(d.components)} web component{d.components === 1 ? '' : 's'} checked)</Row>,
+            <Row ok="info" key="us">Photo selections AI Shield has seen on this page: {String(d.selectionsSeen)}. If you picked a photo and this is still 0, this site's file picker is invisible to AI Shield.</Row>,
+          ];
         if (p.part === 'video') return <Row ok key="v">Video-call protection is running ({String(d.videos)} video{d.videos === 1 ? '' : 's'} on this page)</Row>;
         return null;
       })}
