@@ -32,6 +32,18 @@ describe('temporal smoothing (5-frame rolling window)', () => {
   });
 });
 
+describe('face-swap detector cap', () => {
+  it('is below the red line, so the detector alone can never turn the pill red or trip the circuit breaker', async () => {
+    const { GEND_CAP } = await import('../src/offscreen/shields/people/gend');
+    expect(GEND_CAP).toBeLessThan(RED_T);
+    const s = new TemporalSmoother();
+    let last = s.push(0);
+    for (let i = 0; i < 30; i++) last = s.push(Math.max(0, Math.min(1, Math.min(0.93, GEND_CAP)))); // detector at 93%, main model at 0%
+    expect(last.level).toBe('YELLOW');
+    expect(last.sustainedRed).toBe(false);
+  });
+});
+
 describe('adaptive frame sampling (Gate 4: throttling)', () => {
   it('starts at 2 FPS on WebGPU and halves each time latency exceeds 150 ms, down to the floor', () => {
     const a = new AdaptiveSampler(0);

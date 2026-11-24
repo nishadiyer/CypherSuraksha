@@ -66,6 +66,8 @@ export interface PixelsResult {
 
 /* ---------- People ---------- */
 export interface PeoplePayload {
+  /** run the experimental face-swap detector (set by the router from settings, never by the page) */
+  faceSwap?: boolean;
   /** RGBA pixels, base64 */
   b64: string;
   width: number;

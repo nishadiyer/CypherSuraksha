@@ -215,6 +215,13 @@ export function App() {
             </li>
           ))}
         </ul>
+        <div class="mt-3 flex items-center justify-between gap-3 rounded-md bg-amber-50 p-2 ring-1 ring-amber-200">
+          <div>
+            <div class="text-xs font-medium">Face-swap detector (experimental)</div>
+            <div class="text-[10px] text-slate-600">Needs the optional 609 MB model and a real GPU. It can show amber ("Unsure") but never red. Off by default: it flagged a real webcam as AI-generated in testing.</div>
+          </div>
+          <Toggle label="Face-swap detector (experimental)" on={settings.faceSwap} onChange={(faceSwap) => setSettings({ ...settings, faceSwap })} />
+        </div>
       </Section>
 
       <Section title="Local privacy ledger">

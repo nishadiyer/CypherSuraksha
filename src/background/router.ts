@@ -53,6 +53,7 @@ async function runShield(req: ShieldRequest): Promise<ShieldResponse> {
       payload: { text: p.text, existingMap: await getMap(req.tabId), vault: await loadVault() } satisfies PrivacyPayload,
     };
   }
+  if (req.shield === 'PEOPLE') req = { ...req, payload: { ...(req.payload as object), faceSwap: (await loadSettings()).faceSwap } };
   await ensureOffscreen();
   const res = (await withTimeout(sendToOffscreen(req), TIMEOUTS[req.shield] ?? INFER_TIMEOUT_MS)) as ShieldResponse | undefined;
   if (!res || res.requestId !== req.requestId) throw new Error('offscreen returned no response');

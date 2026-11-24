@@ -4,7 +4,7 @@ import { disposeModels } from '../ort';
 import { detectFaces, detectorInstalled } from './pixel/faceDetect';
 import { classifyFrame } from './people/classifier';
 import { cropBox, largestFace } from './people/crop';
-import { gendScore, lastGendTiming } from './people/gend';
+import { GEND_CAP, gendScore, lastGendTiming } from './people/gend';
 import { TemporalSmoother } from './people/smoother';
 
 const sessions = new Map<string, TemporalSmoother>();
@@ -59,16 +59,16 @@ export const peopleShield: Shield = {
             const tm = performance.now();
             frame = await classifyFrame(crop.rgba, crop.side, crop.side);
             timing.main = performance.now() - tm;
-            // Optional second detector (face-swaps). The frame score is the larger of the two.
+            // Optional, opt-in second detector (face-swaps). It can raise the score only up to GEND_CAP (amber, never red).
             const tg = performance.now();
-            const g = frame ? await gendScore(crop.rgba, crop.side, crop.side) : null;
+            const g = frame && p.faceSwap ? await gendScore(crop.rgba, crop.side, crop.side) : null;
             if (g !== null) {
               timing.gend = performance.now() - tg;
               timing.gendPrep = lastGendTiming.prep;
               timing.gendRun = lastGendTiming.run;
             }
             if (frame) frame = { ...frame, main: frame.score };
-            if (frame && g !== null) frame = { ...frame, score: Math.max(frame.score, g), gend: g };
+            if (frame && g !== null) frame = { ...frame, score: Math.max(frame.score, Math.min(g, GEND_CAP)), gend: g };
           } finally {
             zero(crop.rgba);
           }

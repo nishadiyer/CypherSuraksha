@@ -30,7 +30,13 @@ export default async function gate5({ browser, sw }) {
   // Per-pillar toggle (Privacy is the first switch after the master switch).
   await popup.bringToFront();
   const toggles = await popup.$$('[role=switch]');
-  check('master + 3 pillar switches rendered', toggles.length === 4, String(toggles.length));
+  check('master + 3 pillar switches + experimental face-swap switch rendered', toggles.length === 5, String(toggles.length));
+  const fs0 = await sw.evaluate(async () => (await chrome.storage.local.get('settings')).settings?.faceSwap ?? false);
+  check('the experimental face-swap detector is OFF by default', fs0 === false, String(fs0));
+  await toggles[4].click(); await sleep(400);
+  const fs1 = await sw.evaluate(async () => (await chrome.storage.local.get('settings')).settings?.faceSwap);
+  check('turning the face-swap switch on persists it', fs1 === true, String(fs1));
+  await toggles[4].click(); await sleep(400);
   await toggles[1].click();
   await sleep(400);
   s = await send('Status of project bluebird please');

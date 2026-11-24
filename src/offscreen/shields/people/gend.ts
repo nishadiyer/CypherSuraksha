@@ -11,6 +11,12 @@ import { looksLikeRealGpu } from './crop';
  */
 export const GEND_MODEL = 'people-gend.fp16.onnx';
 export const GEND_CONFIG = 'people-gend.config.json';
+/**
+ * The face-swap detector can lift the frame score only up to here, which is below the red line (0.7): on its own it can
+ * make the pill amber ("Unsure"), never red and never trigger the warning modal. Red needs the main model to agree.
+ * Why: on the first live webcam test it scored a real face at 93% while the main model said 0%.
+ */
+export const GEND_CAP = 0.65;
 const GEND_BUDGET_MS = 600; // self-test: if a warm inference is slower than this, do not use it
 
 export interface GendConfig {

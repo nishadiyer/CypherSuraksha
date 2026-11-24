@@ -34,7 +34,7 @@ export default async function gatePeople() {
   const ctx = await launch({ protocolTimeout: 120000 });
   try {
     // Sends a frame exactly as the content script now does: whole frame, aspect kept, longest side <= 640.
-    const send = (jpegB64, mode, id) => ctx.sw.evaluate(async (jpegB64, mode, id) => {
+    const send = (jpegB64, mode, id, faceSwapOn = HAVE_GEND) => ctx.sw.evaluate(async (jpegB64, mode, id, faceSwapOn) => {
       const bmp = await createImageBitmap(new Blob([Uint8Array.from(atob(jpegB64), (c) => c.charCodeAt(0))], { type: 'image/jpeg' }));
       let frame;
       if (mode === 'tile') { // the face pasted small into a 16:9 call tile
@@ -56,8 +56,8 @@ export default async function gatePeople() {
         await chrome.offscreen.createDocument({ url: 'src/offscreen/offscreen.html', reasons: ['WORKERS'], justification: 'test' });
         await new Promise((r) => setTimeout(r, 500));
       }
-      return chrome.runtime.sendMessage({ kind: 'OFFSCREEN_INFER', target: 'offscreen', request: { requestId: id, shield: 'PEOPLE', tabId: 1, domain: 'x', payload: { b64: btoa(s), width: frame.width, height: frame.height, sessionId: id } } });
-    }, jpegB64, mode, id);
+      return chrome.runtime.sendMessage({ kind: 'OFFSCREEN_INFER', target: 'offscreen', request: { requestId: id, shield: 'PEOPLE', tabId: 1, domain: 'x', payload: { b64: btoa(s), width: frame.width, height: frame.height, sessionId: id, faceSwap: faceSwapOn } } });
+    }, jpegB64, mode, id, faceSwapOn);
 
     const plain = [], tile = [];
     const t0all = Date.now();
@@ -65,7 +65,7 @@ export default async function gatePeople() {
       const b64 = readFileSync(FIX + it.file).toString('base64');
       for (const [mode, out] of [['plain', plain], ['tile', tile]]) {
         const r = await send(b64, mode, `${mode}${i}`);
-        out.push({ ...it, score: r.data.status === 'no-face' ? null : r.data.frameScore, backend: r.data.backend, ms: r.latencyMs, gend: r.data.gend, t: r.data.timingMs });
+        out.push({ ...it, score: r.data.status === 'no-face' ? null : r.data.frameScore, backend: r.data.backend, ms: r.latencyMs, gend: r.data.gend, main: r.data.main, t: r.data.timingMs });
       }
     }
     const scored = (rows) => rows.filter((r) => r.score !== null);
@@ -98,6 +98,9 @@ export default async function gatePeople() {
         console.log(`  info  second detector (GenD) ran on ${used}/${scored(plain).length} frames; face-swaps caught @0.5: ${swap[0]}/${swap[1]} (main model alone: 1/13)`);
         check('real GPU: the second detector (GenD) runs on every scored frame', used === scored(plain).length, `${used}/${scored(plain).length}`);
         check('real GPU: face-swap recall with both detectors >= 4/13 (main model alone: 1/13)', swap[0] >= 4, `${swap[0]}/${swap[1]}`);
+        check('the face-swap detector can lift the frame score only up to the cap (0.65): alone it can never reach red', scored(plain).every((r) => r.score <= Math.max(r.main ?? 0, 0.65) + 1e-6), JSON.stringify(scored(plain).filter((r) => r.score > Math.max(r.main ?? 0, 0.65) + 1e-6).slice(0, 2).map((r) => [r.score, r.main])));
+        const off = await send(readFileSync(FIX + manifest.items[0].file).toString('base64'), 'plain', 'offcheck', false);
+        check('with the setting off (the default) the face-swap detector does not run', off.data?.gend === undefined && typeof off.data?.main === 'number', JSON.stringify(off.data));
         check('real GPU: both detectors + detection stay usable (< 1500 ms per frame, median; machine-load dependent, see MODELS.md)', lat[lat.length >> 1] < 1500, `${lat[lat.length >> 1].toFixed(0)} ms`);
       } else {
         check('real GPU: detect + crop + classify under the 150 ms budget (median)', lat[lat.length >> 1] < 150, `${lat[lat.length >> 1].toFixed(0)} ms`);

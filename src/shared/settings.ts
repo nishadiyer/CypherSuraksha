@@ -3,12 +3,15 @@ import type { ShieldKind } from '../types/shield';
 export interface Settings {
   enabled: boolean;
   pillars: Record<ShieldKind, boolean>;
+  /** Experimental face-swap detector (needs the optional 609 MB model and a real GPU). Off by default: it flagged a real webcam as AI-generated in live testing. */
+  faceSwap: boolean;
   allowlist: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   pillars: { PRIVACY: true, PIXELS: true, PEOPLE: true },
+  faceSwap: false,
   allowlist: [],
 };
 
