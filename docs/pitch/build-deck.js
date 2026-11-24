@@ -48,7 +48,7 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
     slideNumber: { x: 12.1, y: 6.88, w: 0.6, h: 0.4, fontFace: 'Arial', fontSize: 11, color: MUTED, align: 'right' },
   });
   pres.defineSlideMaster({ ...frame('CS_CONTENT'),
-    objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 0.45, w: W - 2 * M, h: 0.9, fontFace: 'Arial', fontSize: 38, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
+    objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 0.45, w: W - 2 * M, h: 0.9, fontFace: 'Arial', fontSize: 40, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
   pres.defineSlideMaster({ ...frame('CS_TITLE'),
     objects: [...frame('').objects, { placeholder: { options: { name: 'title', type: 'title', x: M, y: 1.0, w: 8, h: 1.0, fontFace: 'Arial', fontSize: 54, bold: true, color: TEXT, align: 'left', valign: 'middle', margin: 0 }, text: '' } }] });
   pres.defineSlideMaster({ ...frame('CS_CLOSE'),
@@ -70,23 +70,23 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
   // ---------- 1. Title + team ----------
   {
     const s = mk('CS_TITLE');
-    txt(s, 'ON-DEVICE AI PRIVACY ARMOR', { x: M, y: 0.6, w: 7, h: 0.35, fontSize: 14, bold: true, color: TEAL, charSpacing: 4 });
+    txt(s, 'ON-DEVICE AI PRIVACY ARMOR', { x: M, y: 0.6, w: 8, h: 0.35, fontSize: 16, bold: true, color: TEAL, charSpacing: 4 });
     s.addText('CypherSuraksha', { placeholder: 'title' });
-    txt(s, 'Stops private details reaching AI chatbots, cloaks your photos, and flags AI-generated faces on video calls. Nothing ever leaves your device.', { x: M, y: 2.15, w: 7.2, h: 0.95, fontSize: 17, color: MUTED, valign: 'top' });
-    chip(s, M, 3.3, 1.6, 'PromptGuard', AMBER); chip(s, M + 1.75, 3.3, 1.6, 'Pixel Cloak', BLUE); chip(s, M + 3.5, 3.3, 1.6, 'TruthLens', GREEN);
+    txt(s, 'Your data, photos and video calls, protected on your device.', { x: M, y: 2.15, w: 7.4, h: 0.9, fontSize: 22, color: MUTED, valign: 'top' });
+    chip(s, M, 3.3, 1.75, 'PromptGuard', AMBER); chip(s, M + 1.9, 3.3, 1.75, 'Pixel Cloak', BLUE); chip(s, M + 3.8, 3.3, 1.75, 'TruthLens', GREEN);
     const cx = 10.6, cy = 2.1;
     [[3.1, LINE, 2], [2.4, TEAL, 3], [1.7, BLUE, 2]].forEach(([d, c, w], i) => s.addShape(pres.ShapeType.ellipse, { x: cx - d / 2, y: cy - d / 2, w: d, h: d, fill: { color: BG, transparency: 100 }, line: { color: c, width: w, dashType: i === 2 ? 'dash' : 'solid', transparency: i === 0 ? 0 : 20 }, objectName: 'ring ' + i }));
     s.addShape(pres.ShapeType.ellipse, { x: cx - 0.75, y: cy - 0.75, w: 1.5, h: 1.5, fill: { color: CARD }, line: { color: LINE, width: 1 }, objectName: 'ring core' });
     s.addImage({ data: await icon('shield', TEAL), x: cx - 0.46, y: cy - 0.46, w: 0.92, h: 0.92, altText: 'shield', objectName: 'ring shield' });
-    txt(s, 'THE TEAM', { x: M, y: 4.1, w: 3, h: 0.3, fontSize: 12, bold: true, color: MUTED, charSpacing: 3, valign: 'middle' });
+    txt(s, 'THE TEAM', { x: M, y: 4.05, w: 3, h: 0.3, fontSize: 14, bold: true, color: MUTED, charSpacing: 3, valign: 'middle' });
     const team = [['Nishad', 'Team Leader and Coder', AMBER], ['Arjun', 'Main Features and App Idea', BLUE], ['Rohan', 'Tech Stack and Coder', GREEN], ['Kartiekya', 'Use Cases and Future Implementations', TEAL]];
     for (let i = 0; i < 4; i++) {
       const x = M + i * 3.07, [n, r, col] = team[i];
-      card(s, x, 4.5, 2.8, 2.05, 'team card ' + n);
-      s.addShape(pres.ShapeType.ellipse, { x: x + 0.25, y: 4.72, w: 0.8, h: 0.8, fill: { color: col, transparency: 84 }, line: { color: col, width: 2 }, objectName: 'avatar ' + n });
-      txt(s, n[0], { x: x + 0.25, y: 4.72, w: 0.8, h: 0.8, fontSize: 26, bold: true, color: col, align: 'center', valign: 'middle' });
-      txt(s, n, { x: x + 1.2, y: 4.72, w: 1.5, h: 0.8, fontSize: 19, bold: true, valign: 'middle' });
-      txt(s, r, { x: x + 0.25, y: 5.7, w: 2.35, h: 0.75, fontSize: 14, color: MUTED, valign: 'top' });
+      card(s, x, 4.45, 2.8, 2.15, 'team card ' + n);
+      s.addShape(pres.ShapeType.ellipse, { x: x + 0.25, y: 4.65, w: 0.8, h: 0.8, fill: { color: col, transparency: 84 }, line: { color: col, width: 2 }, objectName: 'avatar ' + n });
+      txt(s, n[0], { x: x + 0.25, y: 4.65, w: 0.8, h: 0.8, fontSize: 28, bold: true, color: col, align: 'center', valign: 'middle' });
+      txt(s, n, { x: x + 1.2, y: 4.65, w: 1.55, h: 0.8, fontSize: 22, bold: true, valign: 'middle' });
+      txt(s, r, { x: x + 0.25, y: 5.62, w: 2.4, h: 0.9, fontSize: 16, color: MUTED, valign: 'top' });
     }
     s.addNotes('Welcome. CypherSuraksha is a Chrome extension that protects people from three AI-driven threats, entirely on their own device. Nishad leads and codes. Arjun came up with the app idea and core features. Rohan chose the tech stack and codes. Kartiekya owns use cases and the future roadmap.');
   }
@@ -95,28 +95,28 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
   {
     const s = mk('CS_CONTENT');
     s.addText('Problem and use cases', { placeholder: 'title' });
-    txt(s, 'THE PROBLEM', { x: M, y: 1.4, w: 5, h: 0.3, fontSize: 12, bold: true, color: RED, charSpacing: 3, valign: 'middle' });
-    const pr = [['leak', AMBER, 'Real details pasted into AI chats', 'Names, emails, IDs and keys land in a third party\'s logs.'],
-      ['eye', BLUE, 'Photos feed face recognition', 'A scraped selfie can be matched to you and carries location data.'],
-      ['phone', GREEN, 'Faces on video calls can be fake', 'Scammers use AI faces to impersonate people you trust.']];
+    txt(s, 'THE PROBLEM', { x: M, y: 1.4, w: 5, h: 0.3, fontSize: 14, bold: true, color: RED, charSpacing: 3, valign: 'middle' });
+    const pr = [['leak', AMBER, 'Leaky AI chats', 'Names and keys land in third-party logs.'],
+      ['eye', BLUE, 'Scraped photos', 'Selfies get matched to you.'],
+      ['phone', GREEN, 'Fake faces on calls', 'Scammers copy people you trust.']];
     for (let i = 0; i < 3; i++) {
       const y = 1.8 + i * 1.68, [ic, c, h, d] = pr[i];
       card(s, M, y, 5.6, 1.5, 'problem card ' + (i + 1));
       await badge(s, M + 0.25, y + 0.4, 0.7, ic, c, 'problem ' + (i + 1));
-      txt(s, h, { x: M + 1.15, y: y + 0.18, w: 4.25, h: 0.45, fontSize: 17, bold: true, valign: 'middle' });
-      txt(s, d, { x: M + 1.15, y: y + 0.68, w: 4.25, h: 0.7, fontSize: 14, color: MUTED, valign: 'top' });
+      txt(s, h, { x: M + 1.15, y: y + 0.17, w: 4.25, h: 0.5, fontSize: 22, bold: true, valign: 'middle' });
+      txt(s, d, { x: M + 1.15, y: y + 0.72, w: 4.25, h: 0.65, fontSize: 17, color: MUTED, valign: 'top' });
     }
-    txt(s, 'USE CASES', { x: 6.75, y: 1.4, w: 5, h: 0.3, fontSize: 12, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
-    const uc = [['user', AMBER, 'Students and everyday users', 'Summarise an email thread in ChatGPT without exposing names or numbers.'],
-      ['family', BLUE, 'Families sharing photos', 'Post photos with location data removed and faces cloaked.'],
-      ['phone', GREEN, 'Spotting scam calls', 'A "relative" asks for money; the pill warns the face may be AI-generated.'],
-      ['brief', TEAL, 'Work and confidential projects', 'Codenames and account numbers in the vault never reach a chat.']];
+    txt(s, 'USE CASES', { x: 6.75, y: 1.4, w: 5, h: 0.3, fontSize: 14, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
+    const uc = [['user', AMBER, 'Students and users', 'Summarise emails without exposing names.'],
+      ['family', BLUE, 'Families', 'Share photos with faces cloaked.'],
+      ['phone', GREEN, 'Scam calls', 'A fake "relative" gets flagged.'],
+      ['brief', TEAL, 'Confidential work', 'Codenames never reach a chat.']];
     for (let i = 0; i < 4; i++) {
       const y = 1.8 + i * 1.26, [ic, c, h, d] = uc[i];
       card(s, 6.75, y, 5.93, 1.14, 'use case card ' + (i + 1));
       await badge(s, 6.95, y + 0.22, 0.7, ic, c, 'use case ' + (i + 1));
-      txt(s, h, { x: 7.85, y: y + 0.12, w: 4.7, h: 0.38, fontSize: 16, bold: true, valign: 'middle' });
-      txt(s, d, { x: 7.85, y: y + 0.5, w: 4.7, h: 0.58, fontSize: 14, color: MUTED, valign: 'top' });
+      txt(s, h, { x: 7.85, y: y + 0.1, w: 4.7, h: 0.42, fontSize: 19, bold: true, valign: 'middle' });
+      txt(s, d, { x: 7.85, y: y + 0.55, w: 4.7, h: 0.5, fontSize: 16, color: MUTED, valign: 'top' });
     }
     s.addNotes('Left: the three problems. Right: who it helps. Most people have no tool for any of them.');
   }
@@ -125,19 +125,19 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
   {
     const s = mk('CS_CONTENT');
     s.addText('Features', { placeholder: 'title' });
-    const f = [['text', AMBER, 'PromptGuard', 'PII', ['Swaps names, emails, IDs and keys for placeholders before you send', 'Shows real values again in replies, on your screen only', 'Never-share list kept as one-way hashes']],
-      ['face', BLUE, 'Pixel Cloak', 'FACES', ['Adds an invisible change to faces in photos you upload', 'Strips location data (EXIF/GPS)', '"Bypass on this site" if you prefer the original']],
-      ['video', GREEN, 'TruthLens', 'WEBRTC', ['Checks faces on Meet, Zoom and WhatsApp Web calls', 'Pill: No fake found, Unsure, Fake?', 'Clear warning on sustained red']]];
+    const f = [['text', AMBER, 'PromptGuard', 'PII', ['Swaps names, emails and keys for placeholders', 'Restores real values on your screen', 'Never-share word list']],
+      ['face', BLUE, 'Pixel Cloak', 'FACES', ['Invisible change on faces before upload', 'Removes location data', 'Bypass any time']],
+      ['video', GREEN, 'TruthLens', 'WEBRTC', ['Checks faces on Meet, Zoom, WhatsApp', 'Pill: No fake found, Unsure, Fake?', 'Warning on sustained red']]];
     for (let i = 0; i < 3; i++) {
       const x = M + i * 4.14, [ic, col, n, tag, bl] = f[i];
       card(s, x, 1.55, 3.84, 4.0, 'feature card ' + n);
-      await badge(s, x + 0.28, 1.8, 0.7, ic, col, n);
-      txt(s, n, { x: x + 1.12, y: 1.8, w: 2.5, h: 0.4, fontSize: 21, bold: true, valign: 'middle' });
-      txt(s, tag, { x: x + 1.12, y: 2.2, w: 2.5, h: 0.3, fontSize: 12, bold: true, color: col, charSpacing: 3, valign: 'middle' });
-      s.addText(bl.map((t, k) => ({ text: t, options: { bullet: { indent: 16 }, breakLine: k < bl.length - 1, paraSpaceAfter: 8 } })), { isTextBox: true, x: x + 0.28, y: 2.8, w: 3.3, h: 2.6, fontFace: 'Arial', fontSize: 14, color: MUTED, valign: 'top', margin: 0 });
+      await badge(s, x + 0.28, 1.8, 0.75, ic, col, n);
+      txt(s, n, { x: x + 1.2, y: 1.8, w: 2.5, h: 0.45, fontSize: 24, bold: true, valign: 'middle' });
+      txt(s, tag, { x: x + 1.2, y: 2.27, w: 2.5, h: 0.3, fontSize: 14, bold: true, color: col, charSpacing: 3, valign: 'middle' });
+      s.addText(bl.map((t, k) => ({ text: t, options: { bullet: { indent: 18 }, breakLine: k < bl.length - 1, paraSpaceAfter: 10 } })), { isTextBox: true, x: x + 0.28, y: 2.85, w: 3.3, h: 2.6, fontFace: 'Arial', fontSize: 17, color: MUTED, valign: 'top', margin: 0 });
     }
-    txt(s, 'ALSO INCLUDED', { x: M, y: 5.78, w: 1.7, h: 0.4, fontSize: 12, bold: true, color: MUTED, charSpacing: 3, valign: 'middle' });
-    [['Popup dashboard', 2.6, 1.95], ['Trusted sites', 4.7, 1.55], ['Page diagnostics', 6.4, 1.85], ['Dark and light themes', 8.4, 2.3], ['100% on-device', 10.85, 1.6]].forEach(([l, x, w]) => chip(s, x, 5.78, w, l, TEAL));
+    txt(s, 'ALSO', { x: M, y: 5.8, w: 0.9, h: 0.45, fontSize: 14, bold: true, color: MUTED, charSpacing: 3, valign: 'middle' });
+    [['Popup dashboard', 1.6, 2.35], ['Trusted sites', 4.1, 1.85], ['Dark and light', 6.1, 2.0], ['100% on-device', 8.25, 2.1]].forEach(([l, x, w]) => { s.addShape(pres.ShapeType.roundRect, { x, y: 5.8, w, h: 0.45, rectRadius: 0.22, fill: { color: TEAL, transparency: 88 }, line: { color: TEAL, width: 1, transparency: 50 }, objectName: 'chip ' + l }); txt(s, l, { x, y: 5.8, w, h: 0.45, fontSize: 14, bold: true, color: TEAL, align: 'center', valign: 'middle' }); });
     s.addNotes('Three shields, each with its own switch in the popup. Everything runs locally: no accounts, no servers.');
   }
 
@@ -145,18 +145,18 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
   {
     const s = mk('CS_CONTENT');
     s.addText('Tech stack', { placeholder: 'title' });
-    const t = [['FRONT-END', 'chip', AMBER, ['Preact + Tailwind popup', 'Closed Shadow DOM for on-page UI', 'TypeScript']],
-      ['MIDDLE-END', 'globe', BLUE, ['Content scripts watch each page', 'MV3 service-worker router', 'Offscreen page + one Web Worker per shield']],
-      ['BACK-END', 'lock', GREEN, ['None, by design', 'No servers, accounts or telemetry', 'CSP blocks all network requests']],
-      ['FRAMEWORK AND BUILD', 'shield', TEAL, ['Chrome Manifest V3', 'Vite + crxjs', 'Vitest (67 unit tests), Puppeteer end-to-end']],
-      ['ML RUNTIME', 'chip', AMBER, ['onnxruntime-web', 'WebGPU first, WASM fallback', 'Buffers zeroed after every inference']],
-      ['MODELS', 'face', BLUE, ['bert-base-NER (INT8): PII', 'FaceNet + UltraFace: cloaking', 'ViT detector + optional GenD: video']]];
+    const t = [['FRONT-END', 'chip', AMBER, ['Preact + Tailwind', 'Closed Shadow DOM UI', 'TypeScript']],
+      ['MIDDLE-END', 'globe', BLUE, ['Content scripts', 'Service-worker router', 'Offscreen page + Workers']],
+      ['BACK-END', 'lock', GREEN, ['None, by design', 'No servers or accounts', 'Network blocked by CSP']],
+      ['FRAMEWORK', 'shield', TEAL, ['Chrome Manifest V3', 'Vite + crxjs', 'Vitest + Puppeteer tests']],
+      ['ML RUNTIME', 'chip', AMBER, ['onnxruntime-web', 'WebGPU, WASM fallback', 'Buffers wiped after use']],
+      ['MODELS', 'face', BLUE, ['bert-base-NER (PII)', 'FaceNet + UltraFace (cloak)', 'ViT + GenD (video)']]];
     for (let i = 0; i < 6; i++) {
       const col = i % 3, row = Math.floor(i / 3), x = M + col * 4.14, y = 1.5 + row * 2.7, [h, ic, c, bl] = t[i];
       card(s, x, y, 3.84, 2.5, 'stack card ' + h);
-      await badge(s, x + 0.25, y + 0.22, 0.55, ic, c, h);
-      txt(s, h, { x: x + 0.95, y: y + 0.22, w: 2.75, h: 0.55, fontSize: 14, bold: true, color: c, charSpacing: 2, valign: 'middle' });
-      s.addText(bl.map((x2, k) => ({ text: x2, options: { bullet: { indent: 14 }, breakLine: k < bl.length - 1, paraSpaceAfter: 5 } })), { isTextBox: true, x: x + 0.25, y: y + 0.95, w: 3.4, h: 1.45, fontFace: 'Arial', fontSize: 14, color: TEXT, valign: 'top', margin: 0 });
+      await badge(s, x + 0.25, y + 0.22, 0.6, ic, c, h);
+      txt(s, h, { x: x + 1.0, y: y + 0.22, w: 2.7, h: 0.6, fontSize: 16, bold: true, color: c, charSpacing: 2, valign: 'middle' });
+      s.addText(bl.map((x2, k) => ({ text: x2, options: { bullet: { indent: 16 }, breakLine: k < bl.length - 1, paraSpaceAfter: 6 } })), { isTextBox: true, x: x + 0.25, y: y + 1.0, w: 3.45, h: 1.4, fontFace: 'Arial', fontSize: 16, color: TEXT, valign: 'top', margin: 0 });
     }
     s.addNotes('The "back-end" is empty on purpose: privacy comes from never sending data anywhere. The extension\'s Content Security Policy sets connect-src to none.');
   }
@@ -168,71 +168,71 @@ const fs = require('fs'); const MB = {}; for (const f of ['face-detector.ultrafa
     s.addShape(pres.ShapeType.roundRect, { x: M - 0.06, y: 1.44, w: 8.12, h: 4.62, rectRadius: 0.1, fill: { color: CARD }, line: { color: LINE, width: 1 }, objectName: 'video frame' });
     s.addMedia({ type: 'video', path: 'demo.mp4', cover: 'data:image/png;base64,' + require('fs').readFileSync('poster_ai.png').toString('base64'), x: M, y: 1.5, w: 8.0, h: 4.5, altText: 'Screen recording of CypherSuraksha flagging an AI-generated face on a demo video call' });
     card(s, 9.0, 1.44, 3.68, 4.62, 'demo notes card');
-    txt(s, 'WHAT YOU SEE', { x: 9.3, y: 1.7, w: 3.1, h: 0.35, fontSize: 12, bold: true, color: TEAL, charSpacing: 3 });
+    txt(s, 'WHAT YOU SEE', { x: 9.3, y: 1.7, w: 3.1, h: 0.35, fontSize: 14, bold: true, color: TEAL, charSpacing: 3 });
     s.addText([
-      { text: 'Real person', options: { bold: true, color: GREEN, breakLine: true } }, { text: 'Green pill: "No fake found"', options: { color: MUTED, breakLine: true, paraSpaceAfter: 12 } },
-      { text: 'AI-generated face', options: { bold: true, color: RED, breakLine: true } }, { text: 'Pill turns red "Fake?", then the warning dialog appears', options: { color: MUTED, breakLine: true, paraSpaceAfter: 12 } },
-      { text: 'Recorded on a demo page that plays still pictures as a call tile, using the real extension.', options: { color: MUTED, fontSize: 12 } }],
-      { isTextBox: true, x: 9.3, y: 2.15, w: 3.1, h: 3.7, fontFace: 'Arial', fontSize: 15, valign: 'top', margin: 0 });
+      { text: 'Real person', options: { bold: true, color: GREEN, breakLine: true } }, { text: 'Green pill: No fake found', options: { color: MUTED, breakLine: true, paraSpaceAfter: 18 } },
+      { text: 'AI-generated face', options: { bold: true, color: RED, breakLine: true } }, { text: 'Red pill, then a warning', options: { color: MUTED, breakLine: true, paraSpaceAfter: 18 } },
+      { text: 'Demo page with still pictures, real extension.', options: { color: MUTED, fontSize: 14 } }],
+      { isTextBox: true, x: 9.3, y: 2.25, w: 3.1, h: 3.6, fontFace: 'Arial', fontSize: 19, valign: 'top', margin: 0 });
     s.addNotes('Play the clip: real face stays green, AI-generated face turns red and triggers the warning. Be honest that this is a demo page with still pictures; live calls behave differently.');
   }
 
-  // ---------- Results ----------
+  // ---------- 6. Results ----------
   {
     const s = mk('CS_CONTENT');
     s.addText('Results', { placeholder: 'title' });
-    const st = [['53 / 53', TEAL, 'PII entities redacted', 'names, places, organisations in 20 test prompts (regex alone: 47%)'],
-      ['72 ms', AMBER, 'median per prompt', 'redaction with the NER model on WASM'],
-      ['97.5% to 30%', BLUE, 'face match rate after cloaking', 'FaceNet identification; 8 to 15 s per photo'],
-      ['53 ms', GREEN, 'per video frame', 'deepfake check on a real GPU (627 ms on CPU)']];
+    const st = [['53 / 53', TEAL, 'PII entities caught', '20 test prompts (regex alone: 47%)', 40],
+      ['72 ms', AMBER, 'median per prompt', 'NER model, on WASM', 40],
+      ['97.5% to 30%', BLUE, 'face match, cloaked', 'FaceNet; 8 to 15 s per photo', 28],
+      ['53 ms', GREEN, 'per video frame', 'real GPU (627 ms on CPU)', 40]];
     for (let i = 0; i < 4; i++) {
-      const col = i % 2, row = Math.floor(i / 2), x = M + col * 3.4, y = 1.5 + row * 2.35, [big, c, l, d] = st[i];
+      const col = i % 2, row = Math.floor(i / 2), x = M + col * 3.4, y = 1.5 + row * 2.35, [big, c, l, d, fs] = st[i];
       card(s, x, y, 3.2, 2.15, 'stat card ' + (i + 1));
-      txt(s, big, { x: x + 0.25, y: y + 0.2, w: 2.75, h: 0.75, fontSize: i === 2 ? 26 : 34, bold: true, color: c, valign: 'middle' });
-      txt(s, l, { x: x + 0.25, y: y + 0.98, w: 2.75, h: 0.35, fontSize: 14, bold: true, valign: 'middle' });
-      txt(s, d, { x: x + 0.25, y: y + 1.35, w: 2.75, h: 0.7, fontSize: 12, color: MUTED, valign: 'top' });
+      txt(s, big, { x: x + 0.25, y: y + 0.18, w: 2.75, h: 0.8, fontSize: fs, bold: true, color: c, valign: 'middle' });
+      txt(s, l, { x: x + 0.25, y: y + 1.02, w: 2.75, h: 0.4, fontSize: 17, bold: true, valign: 'middle' });
+      txt(s, d, { x: x + 0.25, y: y + 1.45, w: 2.75, h: 0.6, fontSize: 14, color: MUTED, valign: 'top' });
     }
     card(s, 7.6, 1.5, 5.08, 4.55, 'model sizes card');
-    txt(s, 'MODEL SIZES (MB)', { x: 7.9, y: 1.68, w: 4.5, h: 0.3, fontSize: 12, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
-    const sizes = [['Face finder', MB['face-detector.ultraface.onnx']], ['Deepfake INT8', MB['people-deepfake.int8.onnx']], ['Deepfake FP32', MB['people-deepfake.fp32.onnx']], ['PII NER INT8', MB['privacy-ner.int8.onnx']], ['Cloak FaceNet x2', MB['cloak-facenet-casia.onnx'] + MB['cloak-facenet-vggface2.onnx']], ['Face-swap (optional)', MB['people-gend.fp16.onnx']]];
-    const maxMB = Math.max(...sizes.map((x) => x[1])), barX = 9.95, barMax = 1.95;
+    txt(s, 'MODEL SIZES', { x: 7.9, y: 1.68, w: 4.5, h: 0.3, fontSize: 14, bold: true, color: TEAL, charSpacing: 3, valign: 'middle' });
+    const sizes = [['Face finder', MB['face-detector.ultraface.onnx']], ['Deepfake INT8', MB['people-deepfake.int8.onnx']], ['Deepfake FP32', MB['people-deepfake.fp32.onnx']], ['PII NER', MB['privacy-ner.int8.onnx']], ['Cloak x2', MB['cloak-facenet-casia.onnx'] + MB['cloak-facenet-vggface2.onnx']], ['Face-swap (opt.)', MB['people-gend.fp16.onnx']]];
+    const maxMB = Math.max(...sizes.map((x) => x[1])), barX = 10.0, barMax = 1.7;
     const colors = [TEAL, TEAL, TEAL, AMBER, BLUE, MUTED];
     sizes.forEach(([label, mb], i) => {
       const y = 2.2 + i * 0.64;
-      txt(s, label, { x: 7.9, y, w: 2.0, h: 0.44, fontSize: 13, valign: 'middle' });
+      txt(s, label, { x: 7.9, y, w: 2.05, h: 0.44, fontSize: 15, valign: 'middle' });
       const w = Math.max(0.06, (mb / maxMB) * barMax);
       s.addShape(pres.ShapeType.roundRect, { x: barX, y: y + 0.08, w, h: 0.28, rectRadius: 0.05, fill: { color: colors[i] }, line: { color: colors[i], width: 0 }, objectName: 'size bar ' + label });
-      txt(s, (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + ' MB', { x: barX + w + 0.1, y, w: 0.95, h: 0.44, fontSize: 13, bold: true, color: TEXT, valign: 'middle' });
+      txt(s, (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + ' MB', { x: barX + w + 0.1, y, w: 1.0, h: 0.44, fontSize: 15, bold: true, color: TEXT, valign: 'middle' });
     });
-    txt(s, 'Measured on our dev Mac (Apple GPU). 20-sentence PII test and 40-identity face test are small, so treat them as indicative. A different recogniser, ArcFace, was barely affected by the cloak (95% still matched).', { x: M, y: 6.28, w: 12.0, h: 0.5, fontSize: 12, color: MUTED, valign: 'top' });
+    txt(s, 'Small tests on a dev Mac (Apple GPU). ArcFace, a different recogniser, was barely affected (95%).', { x: M, y: 6.28, w: 12.0, h: 0.4, fontSize: 14, color: MUTED, valign: 'top' });
     s.addNotes('All numbers come from our own tests in MODELS.md. PII: 53 of 53 entities with the model, 47% with regex alone. Cloak: FaceNet identification falls from 97.5% to about 30%, but ArcFace is barely affected, which is why we want our own cloaking models. Video: 53 ms per frame on Apple Metal vs 627 ms on CPU. Sizes are the real model files.');
   }
 
-  // ---------- 8. Future ----------
+  // ---------- 7. Future ----------
   {
     const s = mk('CS_CONTENT');
     s.addText('Future implementations', { placeholder: 'title' });
-    const f = [['chip', AMBER, 'Our own cloaking models', 'Train models built for cloaking, so photos resist more face-recognition systems and cloak faster.'],
-      ['globe', BLUE, 'Works on any website', 'Detect chat boxes and uploads automatically, so protection works everywhere, not only on sites we hand-coded.'],
-      ['doc', GREEN, 'More security features', 'Add new protections over time. For example, a terms and conditions checker that searches a site\'s terms for bad clauses, like data selling, and warns you.'],
-      ['store', TEAL, 'Publish on the Chrome Web Store', 'Ship a real extension so everyone can install it in one click.']];
+    const f = [['chip', AMBER, 'Our own cloaking models', 'Built to resist more face-recognition systems.'],
+      ['globe', BLUE, 'Works on any website', 'Finds chat boxes and uploads on its own.'],
+      ['doc', GREEN, 'More security features', 'For example, a terms and conditions checker that flags bad clauses.'],
+      ['store', TEAL, 'Chrome Web Store launch', 'A real extension anyone can install.']];
     for (let i = 0; i < 4; i++) {
       const col = i % 2, row = Math.floor(i / 2), x = M + col * 6.2, y = 1.55 + row * 2.55, [ic, c, h, d] = f[i];
       card(s, x, y, 5.93, 2.3, 'future card ' + (i + 1));
       await badge(s, x + 0.3, y + 0.32, 0.85, ic, c, 'future ' + (i + 1));
-      txt(s, h, { x: x + 1.4, y: y + 0.3, w: 4.2, h: 0.55, fontSize: 20, bold: true, valign: 'middle' });
-      txt(s, d, { x: x + 1.4, y: y + 0.95, w: 4.2, h: 1.2, fontSize: 15, color: MUTED, valign: 'top' });
+      txt(s, h, { x: x + 1.4, y: y + 0.3, w: 4.35, h: 0.55, fontSize: 22, bold: true, valign: 'middle' });
+      txt(s, d, { x: x + 1.4, y: y + 0.95, w: 4.35, h: 1.2, fontSize: 17, color: MUTED, valign: 'top' });
     }
     s.addNotes('Today our cloak targets FaceNet-style recognisers and our chat-site support relies on hand-written selectors. The roadmap fixes both, adds more security features (for example a terms-and-conditions checker), and gets us onto the Chrome Web Store.');
   }
 
-  // ---------- 9. Closing ----------
+  // ---------- 8. Closing ----------
   {
     const s = mk('CS_CLOSE');
     s.addText('Thank you', { placeholder: 'title' });
-    txt(s, 'Your data stays yours.', { x: M, y: 3.7, w: 7, h: 0.6, fontSize: 24, color: TEAL, bold: true });
-    txt(s, 'Questions?', { x: M, y: 4.4, w: 7, h: 0.5, fontSize: 20, color: MUTED });
-    txt(s, 'github.com/nishadiyer/CypherSuraksha', { x: M, y: 5.3, w: 7, h: 0.4, fontSize: 16, color: BLUE });
+    txt(s, 'Your data stays yours.', { x: M, y: 3.7, w: 7, h: 0.6, fontSize: 28, color: TEAL, bold: true });
+    txt(s, 'Questions?', { x: M, y: 4.4, w: 7, h: 0.5, fontSize: 24, color: MUTED });
+    txt(s, 'github.com/nishadiyer/CypherSuraksha', { x: M, y: 5.3, w: 7.5, h: 0.45, fontSize: 18, color: BLUE });
     const cx = 10.1, cy = 3.55;
     [[3.5, LINE, 2], [2.7, TEAL, 3], [1.9, BLUE, 2]].forEach(([d, c, w], i) => s.addShape(pres.ShapeType.ellipse, { x: cx - d / 2, y: cy - d / 2, w: d, h: d, fill: { color: BG, transparency: 100 }, line: { color: c, width: w, dashType: i === 2 ? 'dash' : 'solid', transparency: i === 0 ? 0 : 20 }, objectName: 'ring ' + i }));
     s.addShape(pres.ShapeType.ellipse, { x: cx - 0.9, y: cy - 0.9, w: 1.8, h: 1.8, fill: { color: CARD }, line: { color: LINE, width: 1 }, objectName: 'ring core' });
