@@ -1,0 +1,123 @@
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Browser extension · Chrome (Manifest V3) · Beta</div>
+  <h1>Your AI privacy armor.<br>Nothing leaves your device.</h1>
+  <p class="lede">CypherSuraksha stops sensitive details reaching AI chatbots, makes your uploaded photos harder for face-recognition tools to use, and warns you when the face on a video call may be AI-generated. All of it runs inside your browser, with no servers and no accounts.</p>
+  <div class="cta"><a class="btn" href="#demo">Try the live demo</a><a class="btn ghost" href="documentation.html">Read the documentation</a></div>
+  <div class="stats">
+    <div class="stat"><b>0</b><span>network requests: the extension's pages carry <code>connect-src 'none'</code></span></div>
+    <div class="stat"><b>3</b><span>on-device shields: PromptGuard, Pixel Cloak, TruthLens</span></div>
+    <div class="stat"><b>100%</b><span>of 53 names, places and organisations caught in our 20-sentence test (with the NER model)</span></div>
+    <div class="stat"><b>4 + 15 + 3</b><span>AI chat apps, photo-upload sites, video-call sites covered</span></div>
+  </div>
+</div></header>
+
+<section id="problem"><div class="wrap">
+  <h2>The problem</h2>
+  <p class="sub">Three everyday habits quietly leak who you are.</p>
+  <div class="grid">
+    <div class="card"><h3>You paste real details into AI chats</h3><p>Names, emails, ID numbers and keys end up in a third party's logs and, sometimes, its training data. Most people never think about it at the moment they hit send.</p></div>
+    <div class="card"><h3>Your photos become face-recognition fuel</h3><p>A selfie posted anywhere can be scraped and matched to you, and it carries hidden location data. Few people strip either.</p></div>
+    <div class="card"><h3>Faces on video calls can be fake</h3><p>Scammers now use AI-generated faces to impersonate relatives and colleagues. There is rarely anything in the call window to tell you.</p></div>
+  </div>
+</div></section>
+
+<section id="product"><div class="wrap">
+  <h2>The product</h2>
+  <p class="sub">Three shields, one popup, zero uploads. Each shield acts at the moment of risk, on the page you are already using.</p>
+  <div class="grid">
+    <div class="card"><span class="tag t1">PROMPTGUARD · PII</span><h3>Redacts before you send</h3><p>Swaps names, emails, phone numbers, card numbers, API keys and your own "never share" words for placeholders like <code>[PERSON_1]</code> on ChatGPT, Claude, Gemini and Copilot. Replies are shown with the real values restored on your screen only.</p></div>
+    <div class="card"><span class="tag t2">PIXEL CLOAK · FACES</span><h3>Cloaks photos on upload</h3><p>Finds faces in images you upload to social sites, adds an invisible change (at most 8/255 per colour channel) that confuses face-recognition models, and strips location data. A badge offers "Bypass on this site".</p></div>
+    <div class="card"><span class="tag t3">TRUTHLENS · VIDEO</span><h3>Checks faces on calls</h3><p>Samples video on Google Meet, Zoom Web and WhatsApp Web, crops the face and scores it on-device. A pill shows "No fake found", "Unsure" or "Fake?", and a sustained red opens a clear warning.</p></div>
+  </div>
+</div></section>
+
+<section id="architecture"><div class="wrap">
+  <h2>Architecture</h2>
+  <p class="sub">Content scripts watch the page, a service worker routes requests, and a hidden offscreen page runs one worker per shield with ONNX Runtime (WebGPU first, WASM fallback). Injected UI sits in closed Shadow DOM so pages cannot read or restyle it.</p>
+  <div class="diagram">
+  <svg viewBox="0 0 900 330" role="img" aria-label="CypherSuraksha architecture: content scripts, service worker, offscreen document with three shield workers">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+    <g fill="none" stroke="currentColor" stroke-width="1.6" color="var(--mut)" font-family="ui-sans-serif,system-ui" font-size="14">
+      <rect x="20" y="40" width="230" height="250" rx="16" fill="rgba(194,106,16,.07)"/>
+      <rect x="335" y="40" width="200" height="250" rx="16" fill="rgba(42,111,196,.07)"/>
+      <rect x="620" y="40" width="260" height="250" rx="16" fill="rgba(15,149,128,.08)"/>
+      <path d="M250 165H335" marker-end="url(#ar)"/><path d="M535 165H620" marker-end="url(#ar)"/>
+    </g>
+    <g font-family="ui-sans-serif,system-ui" fill="currentColor" color="var(--ink)" font-size="14">
+      <text x="135" y="32" text-anchor="middle" font-weight="700">THE WEB PAGE</text>
+      <text x="435" y="32" text-anchor="middle" font-weight="700">SERVICE WORKER</text>
+      <text x="750" y="32" text-anchor="middle" font-weight="700">OFFSCREEN DOCUMENT</text>
+      <text x="40" y="78">Prompt interceptor</text><text x="40" y="104">Upload interceptor</text><text x="40" y="130">Video sampler</text>
+      <text x="40" y="170" font-weight="700">Closed Shadow DOM UI</text><text x="40" y="196">toast · badge · pill · modal</text>
+      <text x="40" y="250" font-size="12">isolated world, document_start</text>
+      <text x="355" y="78">Router + allowlist</text><text x="355" y="104">Per-tab session store</text><text x="355" y="130">Offscreen singleton</text><text x="355" y="156">Privacy ledger (counters)</text>
+      <text x="355" y="250" font-size="12">ShieldRequest in · ShieldResponse out</text>
+      <text x="640" y="78" font-weight="700">Web Worker per shield</text>
+      <text x="640" y="108">PromptGuard: regex + NER (INT8)</text><text x="640" y="134">Pixel Cloak: FaceNet EOT-PGD</text><text x="640" y="160">TruthLens: UltraFace + ViT</text>
+      <text x="640" y="206" font-weight="700">onnxruntime-web</text><text x="640" y="232">WebGPU → WASM SIMD</text><text x="640" y="258" font-size="12">tensors disposed, buffers zeroed</text>
+    </g>
+  </svg></div>
+  <h3>Five invariants, each enforced by tests</h3>
+  <ol class="steps">
+    <li><b>Zero network.</b> The CSP blocks every outbound request. An end-to-end test confirms fetch, XHR and WebSocket all fail.</li>
+    <li><b>RAM only.</b> Prompts, images and frames are never written to storage; buffers are zero-filled after each inference.</li>
+    <li><b>Ephemeral redaction maps.</b> Placeholder-to-value pairs live per tab in session storage and vanish on close or navigation.</li>
+    <li><b>Zero-knowledge vault.</b> "Never share" words are stored only as salted SHA-256 hashes.</li>
+    <li><b>UI isolation.</b> Everything injected is in closed Shadow DOM.</li>
+  </ol>
+</div></section>
+
+<section id="matrix"><div class="wrap">
+  <h2>Requirements vs. completion</h2>
+  <p class="sub">Every requirement from our plan, with what is actually built. Statuses are earned: "Built" means a test or live check passed. Where the evidence is thin, we say so.</p>
+  <div class="tbl"><table>
+    <tr><th>Requirement</th><th>Status</th><th>Evidence and honest limits</th></tr>
+    <tr><td>Redact PII in prompts before sending (ChatGPT, Claude, Gemini, Copilot)</td><td><span class="pill built">Built</span></td><td>Checked live on ChatGPT, Claude, Gemini and Copilot. With the NER model: 53 of 53 test entities redacted (47% on the regex fallback alone). Over-flags some acronyms such as "UDP". English only.</td></tr>
+    <tr><td>Restore real values on screen in replies</td><td><span class="pill built">Built</span></td><td>Works in normal chat replies. Skips editable areas on purpose, so ChatGPT's canvas shows placeholders.</td></tr>
+    <tr><td>"Never share" keyword vault (hashed)</td><td><span class="pill built">Built</span></td><td>Salted SHA-256 only; plaintext cleared from the UI right after saving.</td></tr>
+    <tr><td>Strip photo metadata (EXIF/GPS) on upload</td><td><span class="pill built">Built</span></td><td>Re-encoding drops it. GIF/AVIF/HEIC are reported "not uploaded", never passed through.</td></tr>
+    <tr><td>Cloak faces against recognition</td><td><span class="pill part">Partial</span></td><td>FaceNet-class matching fell from 97.5% to about 30% and survived JPEG. A different recogniser (ArcFace) was barely affected (95%). 8–15 s per photo. Live-checked on Reddit.</td></tr>
+    <tr><td>Photo upload coverage (15 sites)</td><td><span class="pill part">Partial</span></td><td>All covered by stand-in tests; live-verified on Reddit. Imgur showed an unexplained album error we have not isolated.</td></tr>
+    <tr><td>Flag AI-generated faces on calls</td><td><span class="pill part">Partial</span></td><td>Fully AI-generated faces read about 99.7% on our samples. Accuracy at a 0.5 cut-off is about 68% on mixed fakes; ranking quality (AUC) about 0.73 with a small face in a call tile.</td></tr>
+    <tr><td>Flag face-swaps on calls</td><td><span class="pill exp">Experimental</span></td><td>Opt-in, needs a 609 MB model and a real GPU, and is capped at amber ("Unsure"). Caught 58–65% of swaps in still photos, but once wrongly scored a real webcam face. Not proven on live video.</td></tr>
+    <tr><td>Call coverage: Meet, Zoom Web, WhatsApp Web</td><td><span class="pill part">Partial</span></td><td>Live-checked on Google Meet. Zoom and WhatsApp Web checked on stand-in pages only.</td></tr>
+    <tr><td>Zero-network guarantee</td><td><span class="pill built">Built</span></td><td>CSP <code>connect-src 'none'</code>; verified in an end-to-end test and a build gate.</td></tr>
+    <tr><td>Popup: toggles, trusted sites, ledger, page diagnostics, dark/light</td><td><span class="pill built">Built</span></td><td>Tabbed popup covered by end-to-end tests.</td></tr>
+    <tr><td>Chrome Web Store package and privacy policy</td><td><span class="pill part">Partial</span></td><td>Zip and policy are ready (6.8 MB). Not yet submitted.</td></tr>
+    <tr><td>Cloak that also defeats ArcFace-style recognisers</td><td><span class="pill road">Roadmap</span></td><td>Our ensemble experiments did not transfer. Needs new research.</td></tr>
+    <tr><td>Face-swap detector trained for live video</td><td><span class="pill road">Roadmap</span></td><td>Needed to fix the webcam false positive and make a red alert safe.</td></tr>
+    <tr><td>Firefox and Edge builds; more languages for NER</td><td><span class="pill road">Roadmap</span></td><td>Not started.</td></tr>
+  </table></div>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <h2>Roadmap</h2>
+  <div class="grid">
+    <div class="card"><h3>Next</h3><p>Submit to the Chrome Web Store. Re-check chat-site selectors on a schedule, since sites change their markup. Isolate the Imgur upload error.</p></div>
+    <div class="card"><h3>Then</h3><p>Test on real Zoom and WhatsApp Web calls. Collect webcam samples to recalibrate the face-swap detector so it can safely alert.</p></div>
+    <div class="card"><h3>Later</h3><p>Research a cloak that transfers across recognisers, a faster cloak, and Firefox and Edge builds.</p></div>
+  </div>
+</div></section>
+
+<section id="deploy"><div class="wrap">
+  <h2>Deployment notes</h2>
+  <p class="sub">This is a client-side product, so there is no server lane to run. "Deployment" means installing the extension and, for demos, serving one static page.</p>
+  <div class="grid">
+    <div class="card"><h3>Install</h3><p>Build once, then Load unpacked from <code>dist/</code> in <code>chrome://extensions</code>. Or install the packaged zip. Details in the documentation.</p></div>
+    <div class="card"><h3>Models</h3><p>Optional files in <code>public/models/</code>. With none, every shield uses a deterministic fallback and the People shield shows an honest "Unverified" state instead of green.</p></div>
+    <div class="card"><h3>Demo page</h3><p>A static page plays sample faces as a fake call tile. It needs a separate DEMO build of the extension, so the shipping build never carries the localhost permission.</p></div>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <h2>Try the live demo</h2>
+  <p class="sub">There is no login. The demo is a local page plus a separate demo build of the extension, so you see the real shields react in your own browser.</p>
+  <ol class="steps">
+    <li>Get the code: <a href="https://github.com/nishadiyer/CypherSuraksha">github.com/nishadiyer/CypherSuraksha</a>. Run <code>npm install</code>, then <code>npm run build:demo</code>.</li>
+    <li>In Chrome open <code>chrome://extensions</code>, enable Developer mode, choose <b>Load unpacked</b>, and select <code>dist-demo/</code>.</li>
+    <li>Open the demo page (<code>demo/index.html</code>, served on port 4186 in our setup) and click <b>Real person</b>, then <b>AI-generated face</b>. Hover the pill to see the numbers.</li>
+    <li>Open ChatGPT or Claude and type a made-up name, email and phone number to watch PromptGuard swap them for placeholders.</li>
+  </ol>
+  <div class="note">Be aware: the demo plays still pictures. Real calls are live video, where results differ. See the documentation's limits section.</div>
+  <div class="cta"><a class="btn" href="documentation.html#demo">Full demo guide</a><a class="btn ghost" href="documentation.html">Documentation</a></div>
+</div></section>

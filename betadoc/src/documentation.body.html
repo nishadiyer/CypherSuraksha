@@ -1,0 +1,83 @@
+<div class="wrap doc">
+<aside><div class="toc"><b class="sans" style="font-size:12px;letter-spacing:.1em;color:var(--mut)">CONTENTS</b>
+<a href="#install">Install</a><a href="#manual">User manual</a><a href="#day">A day in the life</a><a href="#tech">Technical architecture</a><a href="#contract">Shield contract</a><a href="#models">Models</a><a href="#limits">Limits</a><a href="#demo">Demo guide</a><a href="#testing">Testing</a><a href="#privacy">Privacy</a></div></aside>
+<main>
+<section id="install"><h2>Install</h2>
+<pre>npm install
+npm run models          # optional: NER + deepfake models (downloads, checksum-verified)
+npm run build           # type-check, bundle, manifest/CSP gate
+npm run package         # zip for the Chrome Web Store</pre>
+<p>Open <code>chrome://extensions</code>, enable <b>Developer mode</b>, choose <b>Load unpacked</b> and select <code>dist/</code>. Without model files the extension still works using deterministic fallbacks. There are no accounts or logins anywhere in the product, so there are no demo credentials.</p></section>
+
+<section id="manual"><h2>User manual</h2>
+<p>Click the toolbar icon. The popup has four tabs and a sun/moon button for light and dark themes.</p>
+<h3>Shield</h3><p>The ring shows how many of the three shields are armed. Three counters show prompts redacted, photos cloaked and calls checked (counts only, never content). Each defense card has its own switch: <b>PromptGuard</b>, <b>Pixel Cloak</b>, <b>TruthLens</b>. Under TruthLens is the experimental <b>face-swap detector</b>, off by default.</p>
+<h3>Page</h3><p>Tells you whether CypherSuraksha is running on the tab you are viewing, whether it found the message box and send button, how many placeholders it remembers, and the latest video reading. Use "Show a test notification on this page" to confirm the on-page UI works.</p>
+<h3>Vault</h3><p>Add words that must never reach an AI chat. They are stored only as salted one-way hashes, so they cannot be listed back. "Remove all keywords" asks you to click twice.</p>
+<h3>Sites</h3><p>Trusted sites: on these, CypherSuraksha stands down completely.</p>
+<h3>On-page messages</h3>
+<ul><li><b>Toast</b> (bottom right): tells you a prompt was redacted.</li><li><b>Badge</b> near an upload: "Cloaking photo…" then "Cloaked", with "Bypass on this site".</li><li><b>Pill</b> on a video: green "No fake found", amber "Unsure", red "Fake?", grey "No face". Hover for the numbers.</li><li><b>Warning</b>: "This video may be AI-generated" after sustained red.</li></ul></section>
+
+<section id="day"><h2>A day in the life</h2>
+<ol class="steps">
+<li><b>Morning, ChatGPT.</b> You paste an email thread to summarise. A toast confirms names, addresses and a phone number became placeholders. The summary comes back with the real names restored on your screen.</li>
+<li><b>Lunch, Reddit.</b> You upload a holiday photo. The badge says "Cloaking photo…", then "Cloaked". The file the site receives has no GPS data and a faint, invisible change over faces.</li>
+<li><b>Afternoon, Google Meet.</b> A "colleague" asks for an urgent transfer. The pill stays red and the warning appears. You hang up and call them on a number you already know.</li>
+<li><b>Evening, the popup.</b> The Shield tab shows today's counters. You add a project codename to the Vault so it is blocked from every chat from now on.</li></ol></section>
+
+<section id="tech"><h2>Technical architecture</h2>
+<pre>src/background   router, offscreen singleton manager, per-tab session store, ledger
+src/content      interceptors (prompt, upload, video) and ui/ (closed Shadow DOM)
+src/offscreen    registry, workers, shields (privacy, pixel, people), ORT loader
+src/popup        Preact popup (tabs, theme, diagnostics)
+src/shared       messages, settings, vault, base64 helpers
+src/types        shield contract</pre>
+<p><b>Stack:</b> Chrome Manifest V3, Vite with crxjs, Preact, Tailwind, onnxruntime-web. Permissions are only <code>offscreen</code>, <code>storage</code>, <code>activeTab</code>, <code>scripting</code>, plus host access to the listed sites.</p>
+<h3>PromptGuard</h3><p>Regex detectors (emails, phones, SSN, Luhn-valid cards, API keys) merge with INT8 BERT NER spans and your hashed list; overlaps resolve by priority. A restorer swaps placeholders back in replies, handling text split across nodes. For controlled editors it uses editing strategies and re-verifies afterward; if it cannot confirm the redaction, it fails safe and never sends the original.</p>
+<h3>Pixel Cloak</h3><p>UltraFace finds faces; a per-image EOT-PGD optimisation against FaceNet models (momentum, random crop scale and shift, exact resize adjoint) produces a change clamped to ±8/255 across overlapping faces. Output is re-encoded, which strips metadata.</p>
+<h3>TruthLens</h3><p>Frames are sampled at 0.5–2 fps, the largest face is cropped (30% margin), scored by a ViT classifier (FP32 on WebGPU when a real GPU exists, INT8 on WASM otherwise), and smoothed over 5 frames: amber from 40%, red from 70%. The warning needs 3 sustained reds. One pill per video source.</p></section>
+
+<section id="contract"><h2>Shield contract</h2>
+<p>All shields implement <code>src/types/shield.ts</code>.</p>
+<pre>ShieldRequest  { requestId, shield, tabId, domain, payload }
+ShieldResponse { requestId, action: ALLOW | MODIFY | WARN | BLOCK,
+                 data?, confidence, latencyMs }</pre>
+<p>There is no network API: the only interface is message passing between content scripts, the service worker and the offscreen document.</p></section>
+
+<section id="models"><h2>Models</h2>
+<div class="tbl"><table><tr><th>Shield</th><th>Model</th><th>Notes</th></tr>
+<tr><td>PromptGuard</td><td><code>Xenova/bert-base-NER</code> INT8 (MIT)</td><td>104 MB, 72 ms median per prompt on WASM; checksum-verified download.</td></tr>
+<tr><td>Pixel Cloak</td><td>FaceNet embedders + UltraFace detector</td><td>8–15 s per photo.</td></tr>
+<tr><td>TruthLens</td><td>CommunityForensics ViT + UltraFace; optional GenD CLIP-L/14</td><td>About 80 ms per frame on a real GPU, 0.85 s without. GenD adds 255–570 ms.</td></tr></table></div>
+<p>File names, tensor shapes and configs are in <code>MODELS.md</code> in the repository.</p></section>
+
+<section id="limits"><h2>Limits to know about</h2>
+<ul>
+<li>Chat-site selectors target today's page markup and may need updates when sites change.</li>
+<li>Cloaking works against FaceNet-class recognisers (97.5% down to about 30%) but barely dents ArcFace (95%). It is a speed bump, not a guarantee.</li>
+<li>AI-generated faces are caught well; face-swaps are not reliably caught. The optional detector can only show amber, and once misread a real webcam.</li>
+<li>Demo pictures are stills; live video behaves differently.</li>
+<li>Prompt redaction without the NER model catches structured data and name cues, not arbitrary names.</li>
+<li>Restoration skips editable areas such as ChatGPT's canvas, by design.</li>
+<li>JavaScript strings cannot be zeroed; zero-fill applies to typed arrays and tensors.</li></ul></section>
+
+<section id="demo"><h2>Demo guide</h2>
+<pre>npm run fixtures        # sample pictures (public research datasets)
+npm run demo:prepare    # copies three pictures into demo/media/
+npm run build:demo      # separate DEMO extension in dist-demo/</pre>
+<p>Load <code>dist-demo/</code> (its name ends "(DEMO build)") and keep only one CypherSuraksha enabled. Serve <code>demo/</code> on <code>http://localhost:4186/</code>.</p>
+<div class="tbl"><table><tr><th>Click</th><th>Expected</th></tr>
+<tr><td>Real person</td><td>Green "No fake found".</td></tr>
+<tr><td>AI-generated face</td><td>Red "Fake?" after about 10–20 s, then the warning.</td></tr>
+<tr><td>Face-swapped face</td><td>Usually green. With the experimental switch on (real GPU, optional model), amber "Unsure".</td></tr></table></div>
+<p>Switch modes on a fresh tab for a clean reading; the pill smooths over 5 frames.</p></section>
+
+<section id="testing"><h2>Testing</h2>
+<pre>npm test                 # 67 unit tests
+npm run test:e2e         # drives real Chrome against stand-in pages
+E2E_REAL_GPU=1 npm run test:e2e   # use the real GPU (Apple Metal)</pre>
+<p>The end-to-end suite covers the CSP, redaction, popup, upload, video and model gates. Live-site checks (ChatGPT, Claude, Gemini, Copilot, Reddit, Google Meet) were done by hand and are recorded in the repository's phasedoc.</p></section>
+
+<section id="privacy"><h2>Privacy</h2>
+<p>No data collected, sent or stored beyond: settings, the hashed vault, three counters, and a per-tab redaction map in session storage. See <code>PRIVACY.md</code>.</p></section>
+</main></div>
