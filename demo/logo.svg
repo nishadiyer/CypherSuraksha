@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="CypherSuraksha">
+  <!--
+    CypherSuraksha logo (vector reconstruction of the supplied mock-up logo: navy shield, gold outline, radar-style emblem).
+    This is the ONE logo asset: the toolbar icons (npm run icons), the popup, toasts and the cloaking badge all use it.
+    To use the original artwork, replace this file (keep a square viewBox) and run: npm run icons
+  -->
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14264f"/>
+      <stop offset="1" stop-color="#091226"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd37a"/>
+      <stop offset="0.55" stop-color="#f4a53a"/>
+      <stop offset="1" stop-color="#d9712a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2f6bff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#2f6bff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ee7d4"/>
+      <stop offset="1" stop-color="#38a6ff"/>
+    </linearGradient>
+  </defs>
+  <path d="M64 7 L109 23 V61 C109 88 91 108 64 121 C37 108 19 88 19 61 V23 Z" fill="url(#fill)" stroke="url(#rim)" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M64 15 L101 28 V60 C101 82 87 99 64 110 C41 99 27 82 27 60 V28 Z" fill="none" stroke="#f4a53a" stroke-opacity="0.22" stroke-width="1.5"/>
+  <circle cx="64" cy="62" r="34" fill="url(#glow)"/>
+  <circle cx="64" cy="62" r="29" fill="none" stroke="url(#ring)" stroke-width="2.6" stroke-dasharray="3 3.4" stroke-linecap="round"/>
+  <circle cx="64" cy="62" r="20" fill="#0c1a3a" stroke="url(#ring)" stroke-width="3.2"/>
+  <g stroke="#6ee7d4" stroke-opacity="0.55" stroke-width="1.4" stroke-linecap="round">
+    <path d="M64 34 V41 M64 83 V90 M36 62 H43 M85 62 H92"/>
+    <path d="M64 49 V75 M51 62 H77" stroke-opacity="0.35"/>
+  </g>
+  <circle cx="64" cy="62" r="8" fill="#17306b" stroke="#58b8ff" stroke-width="1.8"/>
+  <circle cx="64" cy="62" r="3.6" fill="#ffc94d"/>
+</svg>
