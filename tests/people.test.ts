@@ -25,6 +25,14 @@ describe('temporal smoothing (5-frame rolling window)', () => {
     for (let i = 0; i < WINDOW; i++) s.push(0);
     expect(s.push(0)).toMatchObject({ level: 'GREEN', sustainedRed: false });
   });
+  it('hysteresis: a mean hovering at the amber line does not flicker between GREEN and YELLOW', () => {
+    const s = new TemporalSmoother();
+    for (let i = 0; i < WINDOW; i++) s.push(0.45); // YELLOW
+    const levels = [0.3, 0.38, 0.33, 0.37, 0.34, 0.36].map((x) => s.push(x).level);
+    expect(new Set(levels)).toEqual(new Set(['YELLOW'])); // mean stays 0.3-0.4, above the 0.3 exit line
+    for (let i = 0; i < WINDOW; i++) s.push(0.1);
+    expect(s.push(0.1).level).toBe('GREEN');
+  });
   it('sigmoid / prob / softmax2 output decoding', () => {
     expect(toScore(new Float32Array([0]), 'sigmoid')).toBeCloseTo(0.5);
     expect(toScore(new Float32Array([0.9]), 'prob')).toBeCloseTo(0.9);

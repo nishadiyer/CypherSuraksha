@@ -75,7 +75,8 @@
       "matches": [
         "https://meet.google.com/*",
         "https://*.zoom.us/*",
-        "https://web.whatsapp.com/*"
+        "https://web.whatsapp.com/*",
+        "http://localhost/*"
       ],
       "js": [
         "src/content/video.ts"
@@ -138,6 +139,7 @@
     "https://meet.google.com/*",
     "https://*.zoom.us/*",
     "https://copilot.com/*",
-    "https://www.copilot.com/*"
+    "https://www.copilot.com/*",
+    "http://localhost/*"
   ]
 }
